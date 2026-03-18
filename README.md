@@ -1,26 +1,51 @@
-# Contexto do Sistema
-O sistema TicketPrime é um motor de vendas de ingressos para eventos que precisa ser rápido, seguro e escalável.
+# 🎟️ Tech Sonic Inc.
 
-## Critérios Determinantes
-Segurança e Validação Estrita: O sistema deve ser imune a SQL Injection e aplicar o princípio Fail-Fast com retornos claros de Status Codes.
+## 👥 Grupo
 
-Tecnologia e Arquitetura Pré-Definidas: É obrigatório o uso de Minimal API em C#, Dapper com passagem de parâmetros (proibido Entity Framework) e banco de dados relacional construído via script SQL manual.
 
-Regras de Negócio Inegociáveis: O motor de vendas deve validar a integridade relacional, limitar a quantidade de ingressos por CPF, garantir o controle exato de estoque e aplicar cupons apenas dentro do valor mínimo da regra.
+|Aluno(a)|Matricula|
+|---|---|
+|Yuri Domingues|06010142|
+|João Victor Andrade|06009925|
+|Giulia Massafra|06005334|
+|Julia Scarpi|06006846|
+|Leonardo Otoline|06010109|
 
-Qualidade e Auditoria: Entrega obrigatória de testes automatizados com Assert (xUnit), documentação arquitetural (ADR) e métricas operacionais.
+---
 
-## Maiores Riscos Identificados
-Venda Além da Capacidade: Falha no controle de concorrência ou na contagem de estoque da tabela de Reservas, podendo gerar vendas acima da Capacidade Total do evento e resultar em processos judiciais.
+## 📌 Contexto do Sistema
 
-Ação de Cambistas: Ausência ou falha na validação de limite de compras por usuário, permitindo a aquisição de dezenas de ingressos no mesmo CPF.
+O *Tech Sonic Inc.* é um sistema de venda de ingressos para eventos desenvolvido com foco em *performance, segurança e escalabilidade*.
 
-Prejuízo Financeiro com Cupons: Aplicação indevida de regras de desconto em eventos de baixo custo, gerando valores negativos que a TicketPrime precisaria cobrir.
+A plataforma permite:
 
-Vulnerabilidades de Código: Risco de injeção de SQL via concatenação de strings e exposição de senhas ou strings de conexão diretamente no código-fonte (.cs).
+- Cadastro de eventos  
+- Consulta de ingressos disponíveis  
+- Compra de ingressos de forma segura  
 
-## Modelo de Ciclo Recomendado
-Desenvolvimento Iterativo e Incremental com forte base em Test-Driven Development.
+Tudo isso garantindo o controle eficiente de estoque e o cumprimento das regras de negócio.
 
-## Justificativa Técnica
-A abordagem iterativa e incremental é a mais adequada para mitigar os riscos de um colapso semelhante ao do sistema anterior. Ela permite que a infraestrutura, a segurança do banco de dados e os cadastros básicos sejam validados na primeira iteração, criando uma base sólida ("Fail-Fast"). Na iteração seguinte, a complexidade das regras de negócio (estoque, cupons e limites por CPF) é adicionada sobre essa base segura. A adoção de Histórias de Usuário, Critérios BDD e testes automatizados em xUnit desde o início garante que os riscos críticos de negócio não voltem a ocorrer (evitando regressões), enquanto as métricas operacionais (SLO e Error Budget) dão previsibilidade para o sistema em produção.
+---
+
+## 🚀 Como Executar o Projeto
+
+### Restaurar dependências
+```bash
+dotnet restore
+```
+
+
+
+### Executar a aplicação
+```bash
+dotnet run
+```
+
+### Executar os testes
+```bash
+dotnet test
+```
+
+---
+
+*Tech Sonic Inc.*
