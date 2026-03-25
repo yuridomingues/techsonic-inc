@@ -11,7 +11,7 @@ public class ValidacoesBasicasTests
     public void Deve_somar_valores_corretamente(int a, int b, int esperado)
     {
         // Act
-        var resultado = a + b;
+        var resultado = Calculadora.Somar(a, b);
 
         // Assert
         Assert.Equal(esperado, resultado);
