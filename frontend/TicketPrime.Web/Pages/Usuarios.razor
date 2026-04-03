@@ -1,0 +1,87 @@
+@page "/usuarios"
+@inject IApiService Api
+@inject ISnackbar Snackbar
+
+<PageTitle>TicketPrime — Usuários</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Cadastro de usuários</MudText>
+<MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4" Elevation="0">
+    A API valida CPF único. Se o CPF já existir, retornamos HTTP 400 — a tela exibe o aviso abaixo via Snackbar.
+</MudAlert>
+
+<MudPaper Class="pa-6 tp-form" Elevation="6" MaxWidth="MaxWidth.Medium">
+    <MudForm Model="_model">
+        <MudTextField @bind-Value="_model.Cpf"
+                      Label="CPF"
+                      Mask="@(new PatternMask("000.000.000-00"))"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_model.Nome"
+                      Label="Nome completo"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_model.Email"
+                      Label="E-mail"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      InputType="InputType.Email"
+                      Class="mb-6" />
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   FullWidth="true"
+                   Disabled="_saving"
+                   OnClick="SalvarAsync">
+            Cadastrar usuário
+        </MudButton>
+    </MudForm>
+</MudPaper>
+
+@code {
+    private readonly UsuarioFormModel _model = new();
+    private bool _saving;
+
+    private async Task SalvarAsync()
+    {
+        _saving = true;
+        try
+        {
+            var digits = new string(_model.Cpf.Where(char.IsDigit).ToArray());
+            var dto = new TicketPrime.Web.Models.UsuarioDto(digits, _model.Nome.Trim(), _model.Email.Trim());
+
+            var result = await Api.PostUsuarioAsync(dto);
+            if (result.Success)
+            {
+                Snackbar.Add("Usuário cadastrado com sucesso.", Severity.Success);
+                _model.Cpf = string.Empty;
+                _model.Nome = string.Empty;
+                _model.Email = string.Empty;
+            }
+            else
+            {
+                var msg = result.ErrorMessage ?? "Não foi possível cadastrar o usuário.";
+                Snackbar.Add(msg, Severity.Error, config =>
+                {
+                    config.VisibleStateDuration = 8000;
+                    config.ShowCloseIcon = true;
+                });
+            }
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class UsuarioFormModel
+    {
+        public string Cpf { get; set; } = string.Empty;
+        public string Nome { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+    }
+}

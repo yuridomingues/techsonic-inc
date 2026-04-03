@@ -1,0 +1,14 @@
+.tp-glass-appbar {
+    backdrop-filter: blur(12px);
+    background-color: color-mix(in srgb, var(--mud-palette-surface) 82%, transparent) !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--mud-palette-divider) 70%, transparent);
+}
+
+.tp-drawer {
+    border-right: 1px solid color-mix(in srgb, var(--mud-palette-divider) 60%, transparent);
+}
+
+.tp-main {
+    min-height: calc(100vh - 64px);
+    background: linear-gradient(180deg, #0f172a 0%, #121212 45%, #0f172a 100%);
+}

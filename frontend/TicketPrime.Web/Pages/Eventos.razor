@@ -1,0 +1,74 @@
+@page "/eventos"
+@using TicketPrime.Web.Components.Dialogs
+@inject IApiService Api
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>TicketPrime — Eventos</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <div>
+        <MudText Typo="Typo.h4" GutterBottom="true">Eventos</MudText>
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Lista sincronizada com GET /api/eventos</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNovoAsync">
+        Novo evento
+    </MudButton>
+</MudStack>
+
+<MudPaper Class="pa-2 tp-surface" Elevation="6">
+    <MudTable Items="@_eventos" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Loading="_loading" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Nome</MudTh>
+            <MudTh>Capacidade</MudTh>
+            <MudTh>Data</MudTh>
+            <MudTh Style="text-align:right">Preço</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nome">@context.Nome</MudTd>
+            <MudTd DataLabel="Capacidade">@context.CapacidadeTotal</MudTd>
+            <MudTd DataLabel="Data">@context.DataEvento.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
+            <MudTd DataLabel="Preço" Style="text-align:right">@context.PrecoPadrao.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4">Nenhum evento encontrado.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private IReadOnlyList<TicketPrime.Web.Models.EventoDto> _eventos = [];
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _loading = true;
+        try
+        {
+            _eventos = await Api.GetEventosAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Não foi possível carregar eventos: {ex.Message}", Severity.Error);
+            _eventos = [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task AbrirNovoAsync()
+    {
+        var options = new DialogOptions { BackdropClick = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<EventoFormDialog>(null, options);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+            await CarregarAsync();
+    }
+}

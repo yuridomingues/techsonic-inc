@@ -1,0 +1,87 @@
+@page "/cupons"
+@inject IApiService Api
+@inject ISnackbar Snackbar
+
+<PageTitle>TicketPrime — Cupons</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Cupons de desconto</MudText>
+<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    Cadastro via POST /api/cupons
+</MudText>
+
+<MudPaper Class="pa-6 tp-form" Elevation="6" MaxWidth="MaxWidth.Medium">
+    <MudForm @ref="_form" Model="_model">
+        <MudTextField @bind-Value="_model.Codigo"
+                      Label="Código do cupom"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      Class="mb-4"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@Icons.Material.Filled.Tag" />
+
+        <MudNumericField T="decimal" @bind-Value="_model.PorcentagemDesconto"
+                         Label="Porcentagem de desconto"
+                         Variant="Variant.Outlined"
+                         Min="0.01m" Max="100m"
+                         Format="N2"
+                         Culture="@System.Globalization.CultureInfo.GetCultureInfo("pt-BR")"
+                         Class="mb-4" />
+
+        <MudNumericField T="decimal" @bind-Value="_model.ValorMinimoRegra"
+                         Label="Valor mínimo da regra (R$)"
+                         Variant="Variant.Outlined"
+                         Min="0m"
+                         Format="N2"
+                         Culture="@System.Globalization.CultureInfo.GetCultureInfo("pt-BR")"
+                         Class="mb-6" />
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   Size="Size.Large"
+                   FullWidth="true"
+                   Disabled="_saving"
+                   OnClick="SalvarAsync">
+            Cadastrar cupom
+        </MudButton>
+    </MudForm>
+</MudPaper>
+
+@code {
+    private MudForm? _form;
+    private readonly CupomFormModel _model = new();
+    private bool _saving;
+
+    private async Task SalvarAsync()
+    {
+        _saving = true;
+        try
+        {
+            var dto = new TicketPrime.Web.Models.CupomDto(
+                _model.Codigo.Trim().ToUpperInvariant(),
+                _model.PorcentagemDesconto,
+                _model.ValorMinimoRegra);
+
+            var result = await Api.PostCupomAsync(dto);
+            if (result.Success)
+            {
+                Snackbar.Add("Cupom cadastrado com sucesso.", Severity.Success);
+                _model.Codigo = string.Empty;
+                _model.PorcentagemDesconto = 10;
+                _model.ValorMinimoRegra = 0;
+            }
+            else
+                Snackbar.Add(result.ErrorMessage ?? "Falha ao cadastrar cupom.", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class CupomFormModel
+    {
+        public string Codigo { get; set; } = string.Empty;
+        public decimal PorcentagemDesconto { get; set; } = 10;
+        public decimal ValorMinimoRegra { get; set; } = 50;
+    }
+}
