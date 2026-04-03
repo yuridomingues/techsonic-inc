@@ -1,0 +1,37 @@
+@* SVG geométrico — cor via currentColor (herda do tema) *@
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 120 48"
+     width="@EffectiveWidth"
+     height="@EffectiveHeight"
+     fill="none"
+     role="img"
+     aria-label="TicketPrime"
+     class="@Class">
+    <defs>
+        <linearGradient id="@_gradientId" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:currentColor;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:currentColor;stop-opacity:0.65" />
+        </linearGradient>
+    </defs>
+    <rect x="2" y="6" width="116" height="36" rx="10" fill="url(#@_gradientId)" opacity="0.15" stroke="currentColor" stroke-width="1.5" />
+    <path d="M28 6v36M28 14a4 4 0 1 1 0-8M28 42a4 4 0 1 1 0-8M92 6v36M92 14a4 4 0 1 0 0-8M92 42a4 4 0 1 0 0-8"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+    <rect x="38" y="16" width="44" height="16" rx="4" fill="currentColor" opacity="0.9" />
+    <circle cx="46" cy="24" r="3" fill="#0F172A" opacity="0.35" />
+    <circle cx="74" cy="24" r="3" fill="#0F172A" opacity="0.35" />
+</svg>
+
+@code {
+    private readonly string _gradientId = $"tp-grad-{Guid.NewGuid():N}";
+
+    /// <summary>Altura em px (largura proporcional ao viewBox 120x48).</summary>
+    [Parameter]
+    public double Height { get; set; } = 40;
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string EffectiveHeight => $"{Height:0.##}px";
+    private string EffectiveWidth => $"{Height * 120d / 48d:0.##}px";
+}

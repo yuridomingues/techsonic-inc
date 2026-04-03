@@ -1,0 +1,23 @@
+﻿@using TicketPrime.Web.Theme
+
+<MudThemeProvider @bind-IsDarkMode="@_isDark" Theme="@_theme" DefaultScrollbar="true" ObserveSystemDarkModeChange="false" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Não encontrado</PageTitle>
+        <LayoutView Layout="@typeof(Layout.MainLayout)">
+            <MudText>Página não encontrada.</MudText>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    private readonly MudTheme _theme = TicketPrimeTheme.Create();
+    private bool _isDark = true;
+}

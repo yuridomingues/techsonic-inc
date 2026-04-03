@@ -1,0 +1,35 @@
+﻿@inherits LayoutComponentBase
+@using TicketPrime.Web.Theme
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="false" Color="Color.Surface" Class="tp-glass-appbar">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Primary" Edge="Edge.Start" OnClick="@ToggleDrawer" aria-label="Abrir menu" />
+        <div class="d-flex align-center" style="color: var(--mud-palette-primary);">
+            <TicketPrimeLogo Height="36" />
+            <MudText Typo="Typo.h6" Class="ml-3" Style="font-weight: 600; letter-spacing: -0.02em;">TicketPrime</MudText>
+        </div>
+        <MudSpacer />
+        <MudText Typo="Typo.caption" Class="mr-2" Style="opacity:0.85;">Motor de ingressos</MudText>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Breakpoint="Breakpoint.Md" Variant="@DrawerVariant.Mini" MiniWidth="72px" OpenMiniOnHover="true" Class="tp-drawer">
+        <MudNavMenu>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+            <MudNavLink Href="/eventos" Icon="@Icons.Material.Filled.Event">Eventos</MudNavLink>
+            <MudNavLink Href="/cupons" Icon="@Icons.Material.Filled.LocalOffer">Cupons</MudNavLink>
+            <MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.PersonAdd">Usuários</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Class="tp-main">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-6 px-4 px-sm-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+}
