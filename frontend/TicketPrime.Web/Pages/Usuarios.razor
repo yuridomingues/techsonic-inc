@@ -9,8 +9,8 @@
     A API valida CPF único. Se o CPF já existir, retornamos HTTP 400 — a tela exibe o aviso abaixo via Snackbar.
 </MudAlert>
 
-<MudPaper Class="pa-6 tp-form" Elevation="6" MaxWidth="MaxWidth.Medium">
-    <MudForm Model="_model">
+<MudPaper Class="pa-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
+    <MudForm @ref="_form" Model="_model">
         <MudTextField @bind-Value="_model.Cpf"
                       Label="CPF"
                       Mask="@(new PatternMask("000.000.000-00"))"
@@ -33,6 +33,7 @@
 
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
+                   Class="tp-action"
                    Size="Size.Large"
                    FullWidth="true"
                    Disabled="_saving"
@@ -43,11 +44,16 @@
 </MudPaper>
 
 @code {
+    private MudForm? _form;
     private readonly UsuarioFormModel _model = new();
     private bool _saving;
 
     private async Task SalvarAsync()
     {
+        await (_form?.ValidateAsync() ?? Task.CompletedTask);
+        if (_form is not null && !_form.IsValid)
+            return;
+
         _saving = true;
         try
         {

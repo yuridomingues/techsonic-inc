@@ -9,7 +9,7 @@
     Cadastro via POST /api/cupons
 </MudText>
 
-<MudPaper Class="pa-6 tp-form" Elevation="6" MaxWidth="MaxWidth.Medium">
+<MudPaper Class="pa-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
     <MudForm @ref="_form" Model="_model">
         <MudTextField @bind-Value="_model.Codigo"
                       Label="Código do cupom"
@@ -36,7 +36,8 @@
                          Class="mb-6" />
 
         <MudButton Variant="Variant.Filled"
-                   Color="Color.Secondary"
+                   Color="Color.Primary"
+                   Class="tp-action"
                    Size="Size.Large"
                    FullWidth="true"
                    Disabled="_saving"
@@ -53,6 +54,10 @@
 
     private async Task SalvarAsync()
     {
+        await (_form?.ValidateAsync() ?? Task.CompletedTask);
+        if (_form is not null && !_form.IsValid)
+            return;
+
         _saving = true;
         try
         {

@@ -1,11 +1,53 @@
 html, body {
     font-family: "Inter", "Roboto", "Helvetica", "Arial", sans-serif;
     background-color: #0f172a;
-    color: #f1f5f9;
+    color: #e2e8f0;
+    color-scheme: dark;
 }
 
 #app {
     min-height: 100vh;
+    background-color: #0f172a;
+}
+
+a {
+    color: #22d3ee;
+    text-decoration: none;
+}
+
+    a:hover {
+        color: #67e8f9;
+    }
+
+.tp-surface,
+.tp-form {
+    border-radius: 6px !important;
+    border: 1px solid #1e293b;
+    background: #1e293b !important;
+    box-shadow: none !important;
+}
+
+.tp-action.mud-button-filled,
+.tp-action.mud-button-root.mud-button-filled {
+    background-color: #0891b2 !important;
+    border: 1px solid #0e7490 !important;
+    box-shadow: none !important;
+    color: #e2e8f0 !important;
+}
+
+    .tp-action.mud-button-filled:hover,
+    .tp-action.mud-button-root.mud-button-filled:hover {
+        background-color: #06b6d4 !important;
+    }
+
+.tp-dense-table .mud-table-cell {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.tp-dense-table .mud-table-head .mud-table-cell {
+    color: #94a3b8;
+    font-weight: 600;
 }
 
 .valid.modified:not([type=checkbox]) {
@@ -69,7 +111,7 @@ html, body {
     }
 
         .loading-progress circle:last-child {
-            stroke: #7c3aed;
+            stroke: #0891b2;
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }

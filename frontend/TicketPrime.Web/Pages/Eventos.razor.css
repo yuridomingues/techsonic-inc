@@ -1,5 +1,5 @@
 .tp-surface {
-    border-radius: 12px !important;
-    border: 1px solid color-mix(in srgb, var(--mud-palette-divider) 50%, transparent);
-    background: color-mix(in srgb, var(--mud-palette-surface) 92%, transparent) !important;
+    border-radius: 6px !important;
+    border: 1px solid var(--mud-palette-divider);
+    background: var(--mud-palette-surface) !important;
 }

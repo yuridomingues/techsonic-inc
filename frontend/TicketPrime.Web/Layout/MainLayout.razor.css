@@ -1,14 +1,22 @@
-.tp-glass-appbar {
-    backdrop-filter: blur(12px);
-    background-color: color-mix(in srgb, var(--mud-palette-surface) 82%, transparent) !important;
-    border-bottom: 1px solid color-mix(in srgb, var(--mud-palette-divider) 70%, transparent);
+.tp-appbar {
+    background-color: var(--mud-palette-surface) !important;
+    border-bottom: 1px solid var(--mud-palette-divider);
 }
 
 .tp-drawer {
-    border-right: 1px solid color-mix(in srgb, var(--mud-palette-divider) 60%, transparent);
+    background-color: var(--mud-palette-surface);
+    border-right: 1px solid var(--mud-palette-divider);
 }
 
 .tp-main {
     min-height: calc(100vh - 64px);
-    background: linear-gradient(180deg, #0f172a 0%, #121212 45%, #0f172a 100%);
+    background-color: var(--mud-palette-background);
+}
+
+.tp-brand {
+    color: var(--mud-palette-text-primary);
+}
+
+.tp-appbar-kicker {
+    color: var(--mud-palette-text-secondary);
 }

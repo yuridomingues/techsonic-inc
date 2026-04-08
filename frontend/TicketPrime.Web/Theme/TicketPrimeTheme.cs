@@ -4,9 +4,10 @@ namespace TicketPrime.Web.Theme;
 
 public static class TicketPrimeTheme
 {
-    public const string Primary = "#7C3AED";
+    public const string Primary = "#0891B2";
     public const string AccentMint = "#10B981";
     public const string Background = "#0F172A";
+    public const string Surface = "#1E293B";
 
     public static MudTheme Create() => new()
     {
@@ -14,30 +15,30 @@ public static class TicketPrimeTheme
         {
             Primary = Primary,
             Secondary = AccentMint,
-            Tertiary = "#A78BFA",
+            Tertiary = "#38BDF8",
             Background = Background,
-            Surface = "#1E293B",
-            DrawerBackground = "#1E293B",
-            DrawerText = "#F1F5F9",
-            AppbarBackground = Background,
-            AppbarText = "#F8FAFC",
-            TextPrimary = "#F1F5F9",
+            Surface = Surface,
+            DrawerBackground = Surface,
+            DrawerText = "#E2E8F0",
+            AppbarBackground = Surface,
+            AppbarText = "#E2E8F0",
+            TextPrimary = "#E2E8F0",
             TextSecondary = "#94A3B8",
             TextDisabled = "#64748B",
             ActionDefault = "#94A3B8",
-            Divider = "#334155",
-            DividerLight = "#475569",
-            TableLines = "#334155",
-            LinesDefault = "#334155",
-            LinesInputs = "#475569",
-            HoverOpacity = 0.08,
+            Divider = "#1E293B",
+            DividerLight = "#334155",
+            TableLines = "#1E293B",
+            LinesDefault = "#1E293B",
+            LinesInputs = "#334155",
+            HoverOpacity = 0.05,
             DarkContrastText = "#0F172A",
-            PrimaryContrastText = "#FFFFFF",
+            PrimaryContrastText = "#E2E8F0",
             SecondaryContrastText = "#042F2E",
         },
         LayoutProperties = new LayoutProperties
         {
-            DefaultBorderRadius = "12px",
+            DefaultBorderRadius = "6px",
             DrawerWidthLeft = "280px",
             DrawerMiniWidthLeft = "72px",
             AppbarHeight = "64px",

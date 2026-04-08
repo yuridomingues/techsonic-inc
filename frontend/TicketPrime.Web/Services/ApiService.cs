@@ -23,15 +23,7 @@ public sealed class ApiService(HttpClient http) : IApiService
 
     public async Task<ApiResult> PostEventoAsync(EventoCreateDto dto, CancellationToken cancellationToken = default)
     {
-        var payload = new
-        {
-            Id = 0,
-            dto.Nome,
-            dto.CapacidadeTotal,
-            dto.DataEvento,
-            dto.PrecoPadrao,
-        };
-        var response = await http.PostAsJsonAsync("api/eventos", payload, JsonOptions, cancellationToken);
+        var response = await http.PostAsJsonAsync("api/eventos", dto, JsonOptions, cancellationToken);
         return await MapResultAsync(response, cancellationToken);
     }
 

@@ -1,6 +1,0 @@
-.tp-card {
-    border-radius: 12px !important;
-    border: 1px solid color-mix(in srgb, var(--mud-palette-divider) 55%, transparent);
-    background: color-mix(in srgb, var(--mud-palette-surface) 88%, transparent) !important;
-    backdrop-filter: blur(10px);
-}

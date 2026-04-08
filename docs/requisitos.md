@@ -15,16 +15,24 @@ O sistema Tech Sonic Inc. tem como objetivo gerenciar a venda de ingressos para 
 ---
 
 ### HU02 – Listagem de Eventos
-- Como comprador, quero visualizar os eventos disponíveis, para escolher qual ingresso desejo comprar.
+- Como comprador, quero visualizar os eventos cadastrados, para entender a agenda de eventos.
 
 **Critério de Aceitação:**
-- Dado que existem eventos cadastrados com ingressos em estoque, quando o comprador acessar a lista de eventos, então o sistema deve exibir o nome, a data e a quantidade disponível de cada evento.
+- Dado que existem eventos cadastrados, quando o comprador acessar a lista de eventos, então o sistema deve exibir nome, capacidade, data e preço.
   
 ---
 
-### HU03 – Compra de Ingressos
-- Como comprador, quero comprar um ingresso para um evento informando meu CPF, para garantir minha participação.
+### HU03 – Cadastro de Cupom
+- Como operador do sistema, quero cadastrar um cupom de desconto, para campanhas promocionais.
   
 **Critério de Aceitação:**
-- Dado que o evento possui ingressos disponíveis e o CPF do comprador ainda não realizou uma compra para este evento, quando o comprador finalizar a compra, então o sistema deve registrar a venda, reduzir o estoque do evento e retornar sucesso.
+ - Dado que o operador informou código e percentual válidos, quando confirmar o cadastro, então o sistema deve persistir os dados e retornar 201.
+
+---
+
+### HU04 – Cadastro de Usuário
+- Como operador do sistema, quero cadastrar usuários pelo CPF, para habilitar futuras transações.
+
+**Critério de Aceitação:**
+- Dado que o CPF não está duplicado e os campos obrigatórios foram informados, quando confirmar o cadastro, então o sistema deve persistir os dados e retornar 201.
  
