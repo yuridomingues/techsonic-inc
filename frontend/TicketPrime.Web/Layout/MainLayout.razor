@@ -2,20 +2,19 @@
 @using TicketPrime.Web.Theme
 
 <MudLayout>
-    <MudAppBar Elevation="1" Dense="false" Color="Color.Surface" Class="tp-glass-appbar">
+    <MudAppBar Elevation="0" Dense="true" Color="Color.Surface" Class="tp-appbar">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Primary" Edge="Edge.Start" OnClick="@ToggleDrawer" aria-label="Abrir menu" />
-        <div class="d-flex align-center" style="color: var(--mud-palette-primary);">
+        <div class="d-flex align-center tp-brand">
             <TicketPrimeLogo Height="36" />
-            <MudText Typo="Typo.h6" Class="ml-3" Style="font-weight: 600; letter-spacing: -0.02em;">TicketPrime</MudText>
+            <MudText Typo="Typo.subtitle1" Class="ml-2" Style="font-weight: 600; letter-spacing: -0.02em;">TicketPrime</MudText>
         </div>
         <MudSpacer />
-        <MudText Typo="Typo.caption" Class="mr-2" Style="opacity:0.85;">Motor de ingressos</MudText>
+        <MudText Typo="Typo.caption" Class="mr-2 tp-appbar-kicker">Operações B2B</MudText>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Breakpoint="Breakpoint.Md" Variant="@DrawerVariant.Mini" MiniWidth="72px" OpenMiniOnHover="true" Class="tp-drawer">
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" ClipMode="DrawerClipMode.Always" Breakpoint="Breakpoint.Md" Variant="@DrawerVariant.Mini" MiniWidth="72px" OpenMiniOnHover="true" Class="tp-drawer">
         <MudNavMenu>
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-            <MudNavLink Href="/eventos" Icon="@Icons.Material.Filled.Event">Eventos</MudNavLink>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Event">Eventos</MudNavLink>
             <MudNavLink Href="/cupons" Icon="@Icons.Material.Filled.LocalOffer">Cupons</MudNavLink>
             <MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.PersonAdd">Usuários</MudNavLink>
         </MudNavMenu>

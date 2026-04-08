@@ -1,6 +1,6 @@
 ﻿@using TicketPrime.Web.Theme
 
-<MudThemeProvider @bind-IsDarkMode="@_isDark" Theme="@_theme" DefaultScrollbar="true" ObserveSystemDarkModeChange="false" />
+<MudThemeProvider IsDarkMode="true" Theme="@_theme" DefaultScrollbar="true" ObserveSystemDarkModeChange="false" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -19,5 +19,4 @@
 
 @code {
     private readonly MudTheme _theme = TicketPrimeTheme.Create();
-    private bool _isDark = true;
 }

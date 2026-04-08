@@ -1,3 +1,4 @@
+@page "/"
 @page "/eventos"
 @using TicketPrime.Web.Components.Dialogs
 @inject IApiService Api
@@ -11,22 +12,22 @@
         <MudText Typo="Typo.h4" GutterBottom="true">Eventos</MudText>
         <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Lista sincronizada com GET /api/eventos</MudText>
     </div>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNovoAsync">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="tp-action" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNovoAsync">
         Novo evento
     </MudButton>
 </MudStack>
 
-<MudPaper Class="pa-2 tp-surface" Elevation="6">
-    <MudTable Items="@_eventos" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Loading="_loading" LoadingProgressColor="Color.Primary">
+<MudPaper Class="pa-4 tp-surface" Elevation="1">
+    <MudTable Items="@_eventos" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Class="tp-dense-table" Loading="_loading" LoadingProgressColor="Color.Primary">
         <HeaderContent>
             <MudTh>Nome</MudTh>
-            <MudTh>Capacidade</MudTh>
+            <MudTh>Capacidade total</MudTh>
             <MudTh>Data</MudTh>
             <MudTh Style="text-align:right">Preço</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Nome">@context.Nome</MudTd>
-            <MudTd DataLabel="Capacidade">@context.CapacidadeTotal</MudTd>
+            <MudTd DataLabel="Capacidade total">@context.CapacidadeTotal</MudTd>
             <MudTd DataLabel="Data">@context.DataEvento.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
             <MudTd DataLabel="Preço" Style="text-align:right">@context.PrecoPadrao.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))</MudTd>
         </RowTemplate>

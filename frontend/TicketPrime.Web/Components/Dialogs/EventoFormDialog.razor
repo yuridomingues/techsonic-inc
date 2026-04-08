@@ -17,7 +17,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancelar">Cancelar</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_saving" OnClick="SalvarAsync">Salvar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="tp-action" Disabled="_saving" OnClick="SalvarAsync">Salvar</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -39,6 +39,10 @@
 
     private async Task SalvarAsync()
     {
+        await (_form?.ValidateAsync() ?? Task.CompletedTask);
+        if (_form is not null && !_form.IsValid)
+            return;
+
         if (_data is null)
         {
             Snackbar.Add("Informe a data do evento.", Severity.Warning);
