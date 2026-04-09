@@ -17,6 +17,13 @@
     color: var(--mud-palette-text-primary);
 }
 
+.tp-brand-logo {
+    width: 36px;
+    height: 36px;
+    display: block;
+    object-fit: contain;
+}
+
 .tp-appbar-kicker {
     color: var(--mud-palette-text-secondary);
 }
