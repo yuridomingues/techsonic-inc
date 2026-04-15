@@ -4,12 +4,16 @@
 
 <PageTitle>TicketPrime - Cupons</PageTitle>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Cupons de desconto</MudText>
-<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
-    Cadastro via POST /api/cupons
-</MudText>
+<MudStack Spacing="1" Class="mb-4 tp-page-header">
+    <div>
+        <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Cupons de desconto</MudText>
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+            Crie cupons para oferecer promoções e incentivar novas compras.
+        </MudText>
+    </div>
+</MudStack>
 
-<MudPaper Class="pa-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
+<MudPaper Class="pa-3 pa-sm-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
     <MudForm @ref="_form" Model="_model">
         <MudTextField @bind-Value="_model.Codigo"
                       Label="Código do cupom"

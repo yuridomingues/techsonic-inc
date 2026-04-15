@@ -7,18 +7,19 @@
 
 <PageTitle>TicketPrime - Eventos</PageTitle>
 
-<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4 tp-page-header">
     <div>
-        <MudText Typo="Typo.h4" GutterBottom="true">Eventos</MudText>
-        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Lista sincronizada com GET /api/eventos</MudText>
+        <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Eventos</MudText>
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Acompanhe os eventos disponíveis e os detalhes de cada um.</MudText>
     </div>
     <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="tp-action" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNovoAsync">
         Novo evento
     </MudButton>
 </MudStack>
 
-<MudPaper Class="pa-4 tp-surface" Elevation="1">
-    <MudTable Items="@_eventos" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Class="tp-dense-table" Loading="_loading" LoadingProgressColor="Color.Primary">
+<MudPaper Class="pa-2 pa-sm-4 tp-surface" Elevation="1">
+    <div class="tp-table-surface">
+    <MudTable Items="@_eventos" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Class="tp-dense-table tp-event-table" HorizontalScrollbar="true" Loading="_loading" LoadingProgressColor="Color.Primary">
         <HeaderContent>
             <MudTh>Nome</MudTh>
             <MudTh>Capacidade total</MudTh>
@@ -35,6 +36,7 @@
             <MudText Class="pa-4">Nenhum evento encontrado.</MudText>
         </NoRecordsContent>
     </MudTable>
+    </div>
 </MudPaper>
 
 @code {
@@ -58,7 +60,7 @@
             // Evita expor erro técnico de rede para o usuário final.
             _eventos = [];
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Snackbar.Add("Não foi possível carregar eventos agora.", Severity.Error);
             _eventos = [];
