@@ -47,7 +47,9 @@ docker exec -i ticketprime-sql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa 
 
 ### Restaurar dependências
 ```bash
-dotnet restore
+dotnet restore src/techsonic-inc.csproj
+dotnet restore tests/techsonic-inc.Tests/techsonic-inc.Tests.csproj
+dotnet restore frontend/TicketPrime.Web/TicketPrime.Web.csproj
 ```
 
 ### Executar a API (AV1)
