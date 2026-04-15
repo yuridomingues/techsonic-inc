@@ -1,19 +1,22 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
 @using TicketPrime.Web.Theme
+@inject IBrowserViewportService BrowserViewportService
+@inject NavigationManager Navigation
 
 <MudLayout>
     <MudAppBar Elevation="0" Dense="true" Color="Color.Surface" Class="tp-appbar">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Primary" Edge="Edge.Start" OnClick="@ToggleDrawer" aria-label="Abrir menu" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Primary" Edge="Edge.Start" OnClick="@ToggleDrawer" aria-label="Abrir ou fechar o menu de navegação" aria-expanded="@_drawerOpen.ToString().ToLowerInvariant()" />
         <div class="d-flex align-center tp-brand">
-            <img src="favicon.svg" alt="TicketPrime" class="mx-3 tp-brand-logo" />
-            <MudText Typo="Typo.subtitle1" Class="ml-2" Style="font-weight: 600; letter-spacing: -0.02em;">TicketPrime</MudText>
+            <img src="favicon.svg" alt="" width="36" height="36" class="mx-2 mx-sm-3 tp-brand-logo" aria-hidden="true" />
+            <MudText Typo="Typo.subtitle1" Class="ml-1 ml-sm-2 tp-brand-title" Style="font-weight: 600; letter-spacing: -0.02em;">TicketPrime</MudText>
         </div>
         <MudSpacer />
-        <MudText Typo="Typo.caption" Class="mr-2 tp-appbar-kicker">Operações B2B</MudText>
+        <MudText Typo="Typo.caption" Class="mr-2 tp-appbar-kicker">Central de gestão</MudText>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" ClipMode="DrawerClipMode.Always" Breakpoint="Breakpoint.Md" Variant="@DrawerVariant.Mini" MiniWidth="72px" OpenMiniOnHover="true" Class="tp-drawer">
-        <MudNavMenu>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" ClipMode="DrawerClipMode.Always" Breakpoint="Breakpoint.Md" Variant="@DrawerVariant.Responsive" Class="tp-drawer">
+        <MudNavMenu Class="tp-nav-menu">
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Event">Eventos</MudNavLink>
             <MudNavLink Href="/cupons" Icon="@Icons.Material.Filled.LocalOffer">Cupons</MudNavLink>
             <MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.PersonAdd">Usuários</MudNavLink>
@@ -21,14 +24,49 @@
     </MudDrawer>
 
     <MudMainContent Class="tp-main">
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-6 px-4 px-sm-6">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="tp-page-container py-4 py-sm-6 px-3 px-sm-6">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
 
 @code {
-    private bool _drawerOpen = true;
+    /// <summary>Alinhado ao breakpoint <c>Md</c> do drawer (960px).</summary>
+    private const string DesktopMinWidthMediaQuery = "(min-width: 960px)";
+
+    private bool _drawerOpen;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Navigation.LocationChanged += OnLocationChanged;
+            await SyncDrawerOpenFromViewportAsync();
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            if (!await BrowserViewportService.IsMediaQueryMatchAsync(DesktopMinWidthMediaQuery) && _drawerOpen)
+            {
+                _drawerOpen = false;
+                StateHasChanged();
+            }
+        });
+    }
+
+    private async Task SyncDrawerOpenFromViewportAsync()
+    {
+        _drawerOpen = await BrowserViewportService.IsMediaQueryMatchAsync(DesktopMinWidthMediaQuery);
+        StateHasChanged();
+    }
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
 }

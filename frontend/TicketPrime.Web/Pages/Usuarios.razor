@@ -4,12 +4,20 @@
 
 <PageTitle>TicketPrime - Usuários</PageTitle>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Cadastro de usuários</MudText>
-<MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4" Elevation="0">
-    A API valida CPF único. Se o CPF já existir, retornamos HTTP 400 - a tela exibe o aviso abaixo via Snackbar.
+<MudStack Spacing="1" Class="mb-4 tp-page-header">
+    <div>
+        <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Cadastro de usuários</MudText>
+        <MudText Typo="Typo.body2" Class="mb-2 mb-sm-3" Style="color: var(--mud-palette-text-secondary);">
+            Inclua participantes com CPF, nome e e-mail. Os dados são validados ao salvar.
+        </MudText>
+    </div>
+</MudStack>
+
+<MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4" Elevation="0" ContentAlignment="HorizontalAlignment.Start">
+    Cada CPF pode ser cadastrado apenas uma vez. Se já existir, você verá um aviso na tela.
 </MudAlert>
 
-<MudPaper Class="pa-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
+<MudPaper Class="pa-3 pa-sm-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
     <MudForm @ref="_form" Model="_model">
         <MudTextField @bind-Value="_model.Cpf"
                       Label="CPF"
