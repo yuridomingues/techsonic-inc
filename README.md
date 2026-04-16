@@ -20,8 +20,8 @@ O *Tech Sonic Inc.* é um sistema de venda de ingressos para eventos desenvolvid
 A plataforma permite:
 
 - Cadastro de eventos  
-- Consulta de ingressos disponíveis  
-- Compra de ingressos de forma segura  
+- Cadastro de cupons de desconto  
+- Cadastro de usuários com CPF único  
 
 Tudo isso garantindo o controle eficiente de estoque e o cumprimento das regras de negócio.
 
@@ -29,21 +29,42 @@ Tudo isso garantindo o controle eficiente de estoque e o cumprimento das regras 
 
 ## 🚀 Como Executar o Projeto
 
-### Restaurar dependências
+### Preparar o banco SQL Server (Docker)
+1. Inicie o Docker Desktop e aguarde ficar em estado Running.
+2. Suba o SQL Server:
 ```bash
-dotnet restore
+docker run -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD=TechSonicInc@2026 -p 1433:1433 --name ticketprime-sql -d mcr.microsoft.com/mssql/server:2022-latest
+```
+3. Crie o banco:
+```bash
+docker exec -i ticketprime-sql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "TechSonicInc@2026" -C -Q "IF DB_ID('TicketPrime') IS NULL CREATE DATABASE TicketPrime;"
+```
+4. Aplique o schema:
+```bash
+docker cp db/schemaTicket.sql ticketprime-sql:/tmp/schemaTicket.sql
+docker exec -i ticketprime-sql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "TechSonicInc@2026" -C -d TicketPrime -i /tmp/schemaTicket.sql
 ```
 
-
-
-### Executar a aplicação
+### Restaurar dependências
 ```bash
-dotnet run
+dotnet restore src/techsonic-inc.csproj
+dotnet restore tests/techsonic-inc.Tests/techsonic-inc.Tests.csproj
+dotnet restore frontend/TicketPrime.Web/TicketPrime.Web.csproj
+```
+
+### Executar a API (AV1)
+```bash
+dotnet run --project src/techsonic-inc.csproj
 ```
 
 ### Executar os testes
 ```bash
-dotnet test
+dotnet test tests/techsonic-inc.Tests/techsonic-inc.Tests.csproj
+```
+
+### Executar o frontend (opcional)
+```bash
+dotnet run --project frontend/TicketPrime.Web/TicketPrime.Web.csproj
 ```
 
 ---

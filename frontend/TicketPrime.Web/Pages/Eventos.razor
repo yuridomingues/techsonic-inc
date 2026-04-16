@@ -1,0 +1,82 @@
+@page "/"
+@page "/eventos"
+@using TicketPrime.Web.Components.Dialogs
+@inject IApiService Api
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>TicketPrime - Eventos</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4 tp-page-header">
+    <div>
+        <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Eventos</MudText>
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Acompanhe os eventos disponíveis e os detalhes de cada um.</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="tp-action" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNovoAsync">
+        Novo evento
+    </MudButton>
+</MudStack>
+
+<MudPaper Class="pa-2 pa-sm-4 tp-surface" Elevation="1">
+    <div class="tp-table-surface">
+    <MudTable Items="@_eventos" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Class="tp-dense-table tp-event-table" HorizontalScrollbar="true" Loading="_loading" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Nome</MudTh>
+            <MudTh>Capacidade total</MudTh>
+            <MudTh>Data</MudTh>
+            <MudTh Style="text-align:right">Preço</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nome">@context.Nome</MudTd>
+            <MudTd DataLabel="Capacidade total">@context.CapacidadeTotal</MudTd>
+            <MudTd DataLabel="Data">@context.DataEvento.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
+            <MudTd DataLabel="Preço" Style="text-align:right">@context.PrecoPadrao.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4">Nenhum evento encontrado.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+    </div>
+</MudPaper>
+
+@code {
+    private IReadOnlyList<TicketPrime.Web.Models.EventoDto> _eventos = [];
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _loading = true;
+        try
+        {
+            _eventos = await Api.GetEventosAsync();
+        }
+        catch (HttpRequestException)
+        {
+            // Evita expor erro técnico de rede para o usuário final.
+            _eventos = [];
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Não foi possível carregar eventos agora.", Severity.Error);
+            _eventos = [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task AbrirNovoAsync()
+    {
+        var options = new DialogOptions { BackdropClick = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<EventoFormDialog>(null, options);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+            await CarregarAsync();
+    }
+}

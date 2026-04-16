@@ -1,0 +1,101 @@
+@page "/usuarios"
+@inject IApiService Api
+@inject ISnackbar Snackbar
+
+<PageTitle>TicketPrime - Usuários</PageTitle>
+
+<MudStack Spacing="1" Class="mb-4 tp-page-header">
+    <div>
+        <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Cadastro de usuários</MudText>
+        <MudText Typo="Typo.body2" Class="mb-2 mb-sm-3" Style="color: var(--mud-palette-text-secondary);">
+            Inclua participantes com CPF, nome e e-mail. Os dados são validados ao salvar.
+        </MudText>
+    </div>
+</MudStack>
+
+<MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4" Elevation="0" ContentAlignment="HorizontalAlignment.Start">
+    Cada CPF pode ser cadastrado apenas uma vez. Se já existir, você verá um aviso na tela.
+</MudAlert>
+
+<MudPaper Class="pa-3 pa-sm-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
+    <MudForm @ref="_form" Model="_model">
+        <MudTextField @bind-Value="_model.Cpf"
+                      Label="CPF"
+                      Mask="@(new PatternMask("000.000.000-00"))"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_model.Nome"
+                      Label="Nome completo"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_model.Email"
+                      Label="E-mail"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      InputType="InputType.Email"
+                      Class="mb-6" />
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Class="tp-action"
+                   Size="Size.Large"
+                   FullWidth="true"
+                   Disabled="_saving"
+                   OnClick="SalvarAsync">
+            Cadastrar usuário
+        </MudButton>
+    </MudForm>
+</MudPaper>
+
+@code {
+    private MudForm? _form;
+    private readonly UsuarioFormModel _model = new();
+    private bool _saving;
+
+    private async Task SalvarAsync()
+    {
+        await (_form?.ValidateAsync() ?? Task.CompletedTask);
+        if (_form is not null && !_form.IsValid)
+            return;
+
+        _saving = true;
+        try
+        {
+            var digits = new string(_model.Cpf.Where(char.IsDigit).ToArray());
+            var dto = new TicketPrime.Web.Models.UsuarioDto(digits, _model.Nome.Trim(), _model.Email.Trim());
+
+            var result = await Api.PostUsuarioAsync(dto);
+            if (result.Success)
+            {
+                Snackbar.Add("Usuário cadastrado com sucesso.", Severity.Success);
+                _model.Cpf = string.Empty;
+                _model.Nome = string.Empty;
+                _model.Email = string.Empty;
+            }
+            else
+            {
+                var msg = result.ErrorMessage ?? "Não foi possível cadastrar o usuário.";
+                Snackbar.Add(msg, Severity.Error, config =>
+                {
+                    config.VisibleStateDuration = 8000;
+                    config.ShowCloseIcon = true;
+                });
+            }
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class UsuarioFormModel
+    {
+        public string Cpf { get; set; } = string.Empty;
+        public string Nome { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+    }
+}
