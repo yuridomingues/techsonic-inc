@@ -20,4 +20,5 @@ public static class ValidacoesEntrada
     public static bool PrecoNaoNegativo(decimal preco) => preco >= 0;
 
     public static bool PercentualValido(decimal percentual) => percentual > 0 && percentual <= 100;
+
 }

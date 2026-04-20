@@ -58,7 +58,7 @@
             // Evita expor erro técnico de rede para o usuário final.
             _eventos = [];
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Snackbar.Add("Não foi possível carregar eventos agora.", Severity.Error);
             _eventos = [];

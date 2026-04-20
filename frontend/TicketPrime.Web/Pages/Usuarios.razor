@@ -1,6 +1,8 @@
 @page "/usuarios"
 @inject IApiService Api
 @inject ISnackbar Snackbar
+@using MudBlazor
+@using Microsoft.AspNetCore.Components.Web
 
 <PageTitle>TicketPrime - Usuários</PageTitle>
 
@@ -31,6 +33,23 @@
                       InputType="InputType.Email"
                       Class="mb-6" />
 
+        <MudTextField @bind-Value="_model.Senha"
+                      Label="Senha"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      InputType="InputType.Password"
+                      HelperText="Mínimo 8 caracteres"
+                      Validation="@(new Func<string, IEnumerable<string>>(ValidarSenha))"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_model.ConfirmacaoSenha"
+                      Label="Confirmar Senha"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      InputType="InputType.Password"
+                      Validation="@(new Func<string, IEnumerable<string>>(ValidarConfirmacaoSenha))"
+                      Class="mb-6" />
+
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Class="tp-action"
@@ -48,6 +67,29 @@
     private readonly UsuarioFormModel _model = new();
     private bool _saving;
 
+    private IEnumerable<string> ValidarSenha(string senha)
+    {
+        var erros = new List<string>();
+        
+        if (string.IsNullOrWhiteSpace(senha))
+            erros.Add("Senha é obrigatória.");
+        else if (senha.Length < 8)
+            erros.Add("Senha deve ter no mínimo 8 caracteres.");
+        
+        return erros;
+    }
+
+    private IEnumerable<string> ValidarConfirmacaoSenha(string confirmacao)
+    {
+        if (string.IsNullOrWhiteSpace(confirmacao))
+            return new[] { "Confirmação de senha é obrigatória." };
+        
+        if (confirmacao != _model.Senha)
+            return new[] { "As senhas não correspondem." };
+        
+        return Enumerable.Empty<string>();
+    }
+
     private async Task SalvarAsync()
     {
         await (_form?.ValidateAsync() ?? Task.CompletedTask);
@@ -58,15 +100,13 @@
         try
         {
             var digits = new string(_model.Cpf.Where(char.IsDigit).ToArray());
-            var dto = new TicketPrime.Web.Models.UsuarioDto(digits, _model.Nome.Trim(), _model.Email.Trim());
+            var dto = new TicketPrime.Web.Models.UsuarioCreateDto(digits, _model.Nome.Trim(), _model.Email.Trim(), _model.Senha);
 
             var result = await Api.PostUsuarioAsync(dto);
             if (result.Success)
             {
                 Snackbar.Add("Usuário cadastrado com sucesso.", Severity.Success);
-                _model.Cpf = string.Empty;
-                _model.Nome = string.Empty;
-                _model.Email = string.Empty;
+                await LimparFormulario();
             }
             else
             {
@@ -84,10 +124,25 @@
         }
     }
 
+    private async Task LimparFormulario()
+    {
+        _model.Cpf = string.Empty;
+        _model.Nome = string.Empty;
+        _model.Email = string.Empty;
+        _model.Senha = string.Empty;
+        _model.ConfirmacaoSenha = string.Empty;
+        if (_form is not null)
+        {
+            await _form.ResetAsync();
+        }
+    }
+
     private sealed class UsuarioFormModel
     {
         public string Cpf { get; set; } = string.Empty;
         public string Nome { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string Senha { get; set; } = string.Empty;
+        public string ConfirmacaoSenha { get; set; } = string.Empty;
     }
 }
