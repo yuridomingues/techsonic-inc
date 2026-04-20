@@ -42,9 +42,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks();
 
 // JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key configuration is missing.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer configuration is missing.");
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience configuration is missing.");
 var jwtExpiryMinutes = builder.Configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -190,9 +190,9 @@ app.MapPost("/api/auth/login", async (LoginRequest login) =>
         if (usuario == null || !BCrypt.Net.BCrypt.Verify(login.Senha, usuario.SenhaHash))
             return Results.Unauthorized();
 
-        var jwtKey = builder.Configuration["Jwt:Key"];
-        var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-        var jwtAudience = builder.Configuration["Jwt:Audience"];
+        var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key configuration is missing.");
+        var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer configuration is missing.");
+        var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience configuration is missing.");
         var jwtExpiryMinutes = builder.Configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
 
         var tokenHandler = new JwtSecurityTokenHandler();
