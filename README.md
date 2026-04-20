@@ -11,6 +11,23 @@
 |Julia Scarpi|06006846|
 |Leonardo Otoline|06010109|
 
+## 🎯 Funcionalidades Implementadas (Dashboard Admin)
+
+- **Admin Dashboard**: Página `/admin` com métricas em tempo real (ingressos vendidos, receita total, eventos ativos, total de usuários).
+- **Criação Completa de Eventos**: Formulário com todos os campos obrigatórios (nome, tipo, capacidade, data, preço, descrição, local, imagem) e validação frontend/backend.
+- **Geração Automática de Setores**: Ao criar um evento, opção de gerar setores A, B, C com variação de preço (+20% / -20%).
+- **Lista de Eventos com Ações**: Tabela exibindo eventos cadastrados, status (ativo, cancelado, encerrado) e botões para editar/cancelar.
+- **Cancelamento de Eventos (Admin)**: Endpoint que atualiza status do evento, cancela reservas associadas, reembolsa pagamentos e gera cupons de 10% de desconto.
+- **Validação Robusta**: Regras de negócio (capacidade > 0, preço > 0, data futura) aplicadas tanto no frontend (MudBlazor) quanto no backend (`ValidacoesEntrada`).
+- **Upload de Imagem (Placeholder)**: Campo para URL de banner; preparado para integração com `MudFileUpload`.
+- **Animações e UX Aprimorada**:
+  - Transições de página (fade‑in)
+  - Efeitos hover em tabelas e cartões
+  - Skeletons durante carregamento das métricas
+  - Animações CSS para pulse (assentos) e checkmark (sucesso)
+- **Integração com SignalR**: Hub `SeatHub` implementado para bloqueio em tempo real de assentos (backend). Frontend preparado para consumir o hub.
+- **Segurança**: Rotas `/admin` protegidas por flag `IsAdmin` no banco de dados; autenticação JWT.
+
 ---
 
 ## 📌 Contexto do Sistema

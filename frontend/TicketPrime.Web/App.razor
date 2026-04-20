@@ -1,9 +1,14 @@
 ﻿@using TicketPrime.Web.Theme
+@using MudBlazor
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
 
 <MudThemeProvider IsDarkMode="true" Theme="@_theme" DefaultScrollbar="true" ObserveSystemDarkModeChange="false" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<HeadOutlet />
 <MudBreakpointProvider>
 <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">

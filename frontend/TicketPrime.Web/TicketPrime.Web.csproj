@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Reduz fingerprint de outros assets estáticos no Debug (menos mismatch após rebuild). -->
     <StaticWebAssetFingerprintingEnabled Condition="'$(Configuration)' == 'Debug'">false</StaticWebAssetFingerprintingEnabled>
+    <NoWarn>$(NoWarn);MUD0002</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

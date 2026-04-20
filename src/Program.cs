@@ -89,7 +89,7 @@ app.MapGet("/api/eventos", async() =>
     try
     {
         using var connection = new SqlConnection(connectionString);
-        var sql = "SELECT Id, Nome, CapacidadeTotal, DataEvento, PrecoPadrao FROM Eventos ORDER BY DataEvento";
+        var sql = "SELECT Id, Nome, CapacidadeTotal, DataEvento, PrecoPadrao, TipoEvento, Descricao, LocalNome, LocalCidade, BannerUrl, GaleriaTexto, TaxaFixa, Status FROM Eventos ORDER BY DataEvento";
 
         var eventos = await connection.QueryAsync<EventoDto>(sql);
         return Results.Ok(eventos);
@@ -121,12 +121,27 @@ app.MapPost("/api/eventos", async(EventoCreateDto evento) =>
     {
         using var connection = new SqlConnection(connectionString);
         var sql = @"
-            INSERT INTO Eventos (Nome, CapacidadeTotal, DataEvento, PrecoPadrao)
+            INSERT INTO Eventos (Nome, CapacidadeTotal, DataEvento, PrecoPadrao, TipoEvento, Descricao, LocalNome, LocalCidade, BannerUrl, GaleriaTexto, TaxaFixa, Status)
             OUTPUT INSERTED.Id
-            VALUES (@Nome, @CapacidadeTotal, @DataEvento, @PrecoPadrao)";
+            VALUES (@Nome, @CapacidadeTotal, @DataEvento, @PrecoPadrao, @TipoEvento, @Descricao, @LocalNome, @LocalCidade, @BannerUrl, @GaleriaTexto, @TaxaFixa, @Status)";
 
-        var id = await connection.ExecuteScalarAsync<int>(sql, evento);
-        var criado = new EventoDto(id, evento.Nome.Trim(), evento.CapacidadeTotal, evento.DataEvento, evento.PrecoPadrao);
+        var parametros = new
+        {
+            evento.Nome,
+            evento.CapacidadeTotal,
+            evento.DataEvento,
+            evento.PrecoPadrao,
+            evento.TipoEvento,
+            evento.Descricao,
+            evento.LocalNome,
+            evento.LocalCidade,
+            evento.BannerUrl,
+            evento.GaleriaTexto,
+            evento.TaxaFixa,
+            Status = evento.Status ?? "ativo"
+        };
+        var id = await connection.ExecuteScalarAsync<int>(sql, parametros);
+        var criado = new EventoDto(id, evento.Nome.Trim(), evento.CapacidadeTotal, evento.DataEvento, evento.PrecoPadrao, evento.TipoEvento, evento.Descricao, evento.LocalNome, evento.LocalCidade, evento.BannerUrl, evento.GaleriaTexto, evento.TaxaFixa ?? 5.00m, parametros.Status);
 
         return Results.Created($"/api/eventos/{id}", criado);
     }
@@ -139,7 +154,255 @@ app.MapPost("/api/eventos", async(EventoCreateDto evento) =>
     }
 });
 
-app.MapPost("/api/cupons", async (CupomCreateDto cupom) => 
+// ================================
+// ENDPOINTS DE SETORES
+// ================================
+app.MapGet("/api/eventos/{eventoId}/setores", async (int eventoId) =>
+{
+    try
+    {
+        using var connection = new SqlConnection(connectionString);
+        var sql = "SELECT Id, EventoId, Nome, Preco, Cor, Capacidade, Ordem FROM Setores WHERE EventoId = @EventoId ORDER BY Ordem";
+        var setores = await connection.QueryAsync<SetorDto>(sql, new { EventoId = eventoId });
+        return Results.Ok(setores);
+    }
+    catch (SqlException)
+    {
+        return Results.Problem(
+            title: "Falha de banco de dados",
+            detail: "Não foi possível conectar ao SQL Server.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+});
+
+app.MapPost("/api/eventos/{eventoId}/setores", async (int eventoId, SetorCreateDto setor) =>
+{
+    if (string.IsNullOrWhiteSpace(setor.Nome))
+        return Results.BadRequest("Nome do setor é obrigatório.");
+    if (setor.Preco < 0)
+        return Results.BadRequest("Preço não pode ser negativo.");
+    try
+    {
+        using var connection = new SqlConnection(connectionString);
+        // Verificar se evento existe
+        var eventoExiste = await connection.ExecuteScalarAsync<int>("SELECT COUNT(1) FROM Eventos WHERE Id = @EventoId", new { EventoId = eventoId });
+        if (eventoExiste == 0)
+            return Results.NotFound("Evento não encontrado.");
+        
+        var sql = @"INSERT INTO Setores (EventoId, Nome, Preco, Cor, Capacidade, Ordem)
+                    OUTPUT INSERTED.Id
+                    VALUES (@EventoId, @Nome, @Preco, @Cor, @Capacidade, @Ordem)";
+        var id = await connection.ExecuteScalarAsync<int>(sql, new
+        {
+            EventoId = eventoId,
+            setor.Nome,
+            setor.Preco,
+            setor.Cor,
+            setor.Capacidade,
+            setor.Ordem
+        });
+        var criado = new SetorDto(id, eventoId, setor.Nome, setor.Preco, setor.Cor, setor.Capacidade, setor.Ordem);
+        return Results.Created($"/api/setores/{id}", criado);
+    }
+    catch (SqlException)
+    {
+        return Results.Problem(
+            title: "Falha de banco de dados",
+            detail: "Não foi possível conectar ao SQL Server.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+});
+
+app.MapPost("/api/eventos/{eventoId}/gerar-setores", async (int eventoId) =>
+{
+    try
+    {
+        using var connection = new SqlConnection(connectionString);
+        // Verificar se evento existe e obter preço padrão
+        var evento = await connection.QuerySingleOrDefaultAsync<EventoDto>("SELECT Id, PrecoPadrao FROM Eventos WHERE Id = @EventoId", new { EventoId = eventoId });
+        if (evento == null)
+            return Results.NotFound("Evento não encontrado.");
+        
+        // Gerar três setores A, B, C
+        var setores = new[]
+        {
+            new { Nome = "A", Preco = evento.PrecoPadrao, Cor = "#FF6B6B", Capacidade = (int?)null, Ordem = 1 },
+            new { Nome = "B", Preco = evento.PrecoPadrao * 1.2m, Cor = "#4ECDC4", Capacidade = (int?)null, Ordem = 2 },
+            new { Nome = "C", Preco = evento.PrecoPadrao * 0.8m, Cor = "#45B7D1", Capacidade = (int?)null, Ordem = 3 }
+        };
+        
+        var sql = @"INSERT INTO Setores (EventoId, Nome, Preco, Cor, Capacidade, Ordem)
+                    VALUES (@EventoId, @Nome, @Preco, @Cor, @Capacidade, @Ordem)";
+        foreach (var s in setores)
+        {
+            await connection.ExecuteAsync(sql, new
+            {
+                EventoId = eventoId,
+                s.Nome,
+                s.Preco,
+                s.Cor,
+                s.Capacidade,
+                s.Ordem
+            });
+        }
+        
+        return Results.Ok(new { Message = "Setores A, B, C gerados com sucesso." });
+    }
+    catch (SqlException)
+    {
+        return Results.Problem(
+            title: "Falha de banco de dados",
+            detail: "Não foi possível conectar ao SQL Server.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+});
+
+app.MapDelete("/api/setores/{id}", async (int id) =>
+{
+    try
+    {
+        using var connection = new SqlConnection(connectionString);
+        var deleted = await connection.ExecuteAsync("DELETE FROM Setores WHERE Id = @Id", new { Id = id });
+        if (deleted == 0)
+            return Results.NotFound("Setor não encontrado.");
+        return Results.NoContent();
+    }
+    catch (SqlException)
+    {
+        return Results.Problem(
+            title: "Falha de banco de dados",
+            detail: "Não foi possível conectar ao SQL Server.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+});
+
+// ================================
+// ENDPOINT DE CANCELAMENTO DE EVENTO (ADMIN)
+// ================================
+app.MapPost("/api/eventos/{id}/cancelar", async (int id, HttpContext httpContext) =>
+{
+    var cpf = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(cpf))
+        return Results.Unauthorized();
+    
+    try
+    {
+        using var connection = new SqlConnection(connectionString);
+        // Verificar se usuário é admin
+        var usuario = await connection.QuerySingleOrDefaultAsync<UsuarioDto>(
+            "SELECT Cpf, Nome, Email FROM Usuarios WHERE Cpf = @Cpf AND IsAdmin = 1",
+            new { Cpf = cpf });
+        if (usuario == null)
+            return Results.Forbid();
+        
+        // Verificar se evento existe e está ativo
+        var evento = await connection.QuerySingleOrDefaultAsync<EventoDto>(
+            "SELECT Id, Status FROM Eventos WHERE Id = @Id",
+            new { Id = id });
+        if (evento == null)
+            return Results.NotFound("Evento não encontrado.");
+        if (evento.Status == "cancelado")
+            return Results.BadRequest("Evento já está cancelado.");
+        
+        // Atualizar status do evento para cancelado
+        await connection.ExecuteAsync(
+            "UPDATE Eventos SET Status = 'cancelado' WHERE Id = @Id",
+            new { Id = id });
+        
+        // Cancelar todas as reservas do evento (chamar lógica de cancelamento de reserva)
+        var reservas = await connection.QueryAsync<ReservaDto>(
+            "SELECT Id, UsuarioCpf, EventoId, ValorFinalPago, Status FROM Reservas WHERE EventoId = @EventoId AND Status != 'cancelada'",
+            new { EventoId = id });
+        
+        foreach (var reserva in reservas)
+        {
+            // Atualizar status da reserva para cancelada
+            await connection.ExecuteAsync(
+                "UPDATE Reservas SET Status = 'cancelada' WHERE Id = @Id",
+                new { Id = reserva.Id });
+            
+            // Se houver pagamento aprovado, estornar
+            var pagamento = await connection.QuerySingleOrDefaultAsync<PagamentoDto>(
+                "SELECT Id, Status FROM Pagamentos WHERE ReservaId = @ReservaId",
+                new { ReservaId = reserva.Id });
+            if (pagamento != null && pagamento.Status == "aprovado")
+            {
+                await connection.ExecuteAsync(
+                    "UPDATE Pagamentos SET Status = 'estornado', DataAtualizacao = GETDATE() WHERE Id = @Id",
+                    new { Id = pagamento.Id });
+            }
+            
+            // Gerar cupom de 10% para o usuário
+            var cupomCodigo = $"CANCEL-EVT-{reserva.Id}-{DateTime.UtcNow:yyyyMMddHHmm}";
+            await connection.ExecuteAsync(
+                "INSERT INTO Cupons (Codigo, PorcentagemDesconto, ValorMinimoRegra, DataExpiracao) VALUES (@Codigo, 10.00, 0.00, DATEADD(month, 3, GETDATE()))",
+                new { Codigo = cupomCodigo });
+        }
+        
+        return Results.Ok(new { Message = "Evento cancelado com sucesso. Reservas canceladas e cupons gerados." });
+    }
+    catch (SqlException)
+    {
+        return Results.Problem(
+            title: "Falha de banco de dados",
+            detail: "Não foi possível conectar ao SQL Server.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}).RequireAuthorization();
+
+// ================================
+// ENDPOINT DE MÉTRICAS (ADMIN)
+// ================================
+app.MapGet("/api/admin/metricas", async (HttpContext httpContext) =>
+{
+    var cpf = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(cpf))
+        return Results.Unauthorized();
+    
+    try
+    {
+        using var connection = new SqlConnection(connectionString);
+        // Verificar se usuário é admin
+        var usuario = await connection.QuerySingleOrDefaultAsync<UsuarioDto>(
+            "SELECT Cpf, Nome, Email FROM Usuarios WHERE Cpf = @Cpf AND IsAdmin = 1",
+            new { Cpf = cpf });
+        if (usuario == null)
+            return Results.Forbid();
+        
+        // Total de ingressos vendidos (reservas confirmadas)
+        var ingressosVendidos = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Reservas WHERE Status = 'confirmada'");
+        
+        // Receita total (soma dos valores pagos em reservas confirmadas)
+        var receitaTotal = await connection.ExecuteScalarAsync<decimal>(
+            "SELECT ISNULL(SUM(ValorFinalPago), 0) FROM Reservas WHERE Status = 'confirmada'");
+        
+        // Total de eventos ativos
+        var eventosAtivos = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Eventos WHERE Status = 'ativo'");
+        
+        // Total de usuários cadastrados
+        var totalUsuarios = await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM Usuarios");
+        
+        return Results.Ok(new
+        {
+            ingressosVendidos,
+            receitaTotal,
+            eventosAtivos,
+            totalUsuarios
+        });
+    }
+    catch (SqlException)
+    {
+        return Results.Problem(
+            title: "Falha de banco de dados",
+            detail: "Não foi possível conectar ao SQL Server.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}).RequireAuthorization();
+
+app.MapPost("/api/cupons", async (CupomCreateDto cupom) =>
 {
     if (!ValidacoesEntrada.NomeObrigatorio(cupom.Codigo))
         return Results.BadRequest("Código do cupom é obrigatório.");
@@ -711,8 +974,10 @@ app.Run();
 // ==========================================
 // MODELOS DE DADOS
 // ==========================================
-public record EventoDto(int Id, string Nome, int CapacidadeTotal, DateTime DataEvento, decimal PrecoPadrao);
-public record EventoCreateDto(string Nome, int CapacidadeTotal, DateTime DataEvento, decimal PrecoPadrao);
+public record EventoDto(int Id, string Nome, int CapacidadeTotal, DateTime DataEvento, decimal PrecoPadrao, string? TipoEvento, string? Descricao, string? LocalNome, string? LocalCidade, string? BannerUrl, string? GaleriaTexto, decimal? TaxaFixa, string Status);
+public record EventoCreateDto(string Nome, int CapacidadeTotal, DateTime DataEvento, decimal PrecoPadrao, string? TipoEvento, string? Descricao, string? LocalNome, string? LocalCidade, string? BannerUrl, string? GaleriaTexto, decimal? TaxaFixa, string? Status);
+public record SetorDto(int Id, int EventoId, string Nome, decimal Preco, string? Cor, int? Capacidade, int Ordem);
+public record SetorCreateDto(string Nome, decimal Preco, string? Cor, int? Capacidade, int Ordem);
 public record CupomCreateDto(string Codigo, decimal PorcentagemDesconto, decimal ValorMinimoRegra);
 public record UsuarioDto(string Cpf, string Nome, string Email);
 public record UsuarioCreateDto(string Cpf, string Nome, string Email, string Senha);

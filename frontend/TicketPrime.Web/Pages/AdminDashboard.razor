@@ -1,0 +1,169 @@
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components
+@using MudBlazor
+@using MudBlazor.Components
+@using TicketPrime.Web.Services
+@using TicketPrime.Web.Models
+@using System.Globalization
+@page "/admin"
+@* Fixed using directives *@
+@inject IApiService Api
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>TicketPrime - Admin Dashboard</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-6">
+    <div>
+        <MudText Typo="Typo.h4" GutterBottom="true">📊 Painel Administrativo</MudText>
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Visão geral do sistema</MudText>
+    </div>
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="CarregarMetricasAsync">
+        Atualizar
+    </MudButton>
+</MudStack>
+
+@if (_loading)
+{
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudSkeleton Width="70%" Height="2rem" Class="mb-2" />
+                <MudSkeleton Width="50%" Height="3rem" Class="mb-2" />
+                <MudSkeleton Width="90%" Height="1.5rem" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudSkeleton Width="70%" Height="2rem" Class="mb-2" />
+                <MudSkeleton Width="50%" Height="3rem" Class="mb-2" />
+                <MudSkeleton Width="90%" Height="1.5rem" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudSkeleton Width="70%" Height="2rem" Class="mb-2" />
+                <MudSkeleton Width="50%" Height="3rem" Class="mb-2" />
+                <MudSkeleton Width="90%" Height="1.5rem" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudSkeleton Width="70%" Height="2rem" Class="mb-2" />
+                <MudSkeleton Width="50%" Height="3rem" Class="mb-2" />
+                <MudSkeleton Width="90%" Height="1.5rem" />
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+else
+{
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">🎟️ Ingressos Vendidos</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Primary">@_metricas?.ingressosVendidos</MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Reservas confirmadas</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">💰 Receita Total</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Success">@(_metricas?.receitaTotal.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")) ?? "R$ 0,00")</MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Valor arrecadado</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">📅 Eventos Ativos</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Info">@_metricas?.eventosAtivos</MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Eventos com status ativo</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">👥 Usuários Cadastrados</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Warning">@_metricas?.totalUsuarios</MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Total de contas</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudDivider Class="my-6" />
+
+    <MudText Typo="Typo.h5" GutterBottom="true">🚀 Ações Rápidas</MudText>
+    <MudGrid Spacing="3" Class="mb-8">
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">➕ Novo Evento</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">Crie um novo evento com setores automáticos.</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add" OnClick='() => Navigation.NavigateTo("/eventos")'>
+                    Criar Evento
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">📋 Gerenciar Eventos</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">Visualize, edite ou cancele eventos existentes.</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.List" OnClick='() => Navigation.NavigateTo("/eventos")'>
+                    Lista de Eventos
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-4 tp-surface" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">🎫 Cupons</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">Crie e gerencie cupons de desconto.</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" FullWidth="true" StartIcon="@Icons.Material.Filled.LocalOffer" OnClick='() => Navigation.NavigateTo("/cupons")'>
+                    Gerenciar Cupons
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudDivider Class="my-6" />
+
+    <MudText Typo="Typo.h5" GutterBottom="true">📈 Últimas Reservas</MudText>
+    <MudPaper Class="pa-4 tp-surface" Elevation="1">
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">Em breve: listagem das últimas reservas realizadas.</MudText>
+        <MudButton Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" OnClick='() => Navigation.NavigateTo("/reservas")'>
+            Ver todas as reservas
+        </MudButton>
+    </MudPaper>
+}
+
+@code {
+    private AdminMetricas? _metricas;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarMetricasAsync();
+    }
+
+    private async Task CarregarMetricasAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            _metricas = await Api.GetAdminMetricasAsync();
+        }
+        catch (HttpRequestException)
+        {
+            Snackbar.Add("Não foi possível carregar as métricas. Verifique sua conexão.", Severity.Error);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Erro interno ao carregar métricas.", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+}
