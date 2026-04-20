@@ -1,8 +1,14 @@
 namespace TicketPrime.Web.Models;
 
-public record EventoDto(int Id, string Nome, int CapacidadeTotal, DateTime DataEvento, decimal PrecoPadrao);
+public record EventoDto(int Id, string Nome, int CapacidadeTotal, DateTime DataEvento, decimal PrecoPadrao, string? TipoEvento, string? Descricao, string? LocalNome, string? LocalCidade, string? BannerUrl, string? GaleriaTexto, decimal? TaxaFixa, string Status);
 
-public record EventoCreateDto(string Nome, int CapacidadeTotal, DateTime DataEvento, decimal PrecoPadrao);
+public record EventoCreateDto(string Nome, int CapacidadeTotal, DateTime DataEvento, decimal PrecoPadrao, string? TipoEvento, string? Descricao, string? LocalNome, string? LocalCidade, string? BannerUrl, string? GaleriaTexto, decimal? TaxaFixa, string? Status);
+
+public record SetorDto(int Id, int EventoId, string Nome, decimal Preco, string? Cor, int? Capacidade, int Ordem);
+
+public record SetorCreateDto(string Nome, decimal Preco, string? Cor, int? Capacidade, int Ordem);
+
+public record AdminMetricas(int ingressosVendidos, decimal receitaTotal, int eventosAtivos, int totalUsuarios);
 
 public record CupomDto(string Codigo, decimal PorcentagemDesconto, decimal ValorMinimoRegra);
 

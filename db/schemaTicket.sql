@@ -3,7 +3,8 @@ CREATE TABLE Usuarios(
     Nome VARCHAR(100) NOT NULL,
     Email VARCHAR(150) NOT NULL,
     SenhaHash VARCHAR(255) NOT NULL DEFAULT '',
-    DataCriacao DATETIME NOT NULL DEFAULT GETDATE()
+    DataCriacao DATETIME NOT NULL DEFAULT GETDATE(),
+    IsAdmin BIT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE Eventos(
@@ -19,7 +20,19 @@ CREATE TABLE Eventos(
     LocalCidade VARCHAR(100) NULL,
     TipoEvento VARCHAR(20) NULL CHECK (TipoEvento IN ('estadio', 'teatro', 'show', 'outro')),
     MapaAssentosJson TEXT NULL,
-    TaxaFixa DECIMAL(10,2) NOT NULL DEFAULT 5.00
+    TaxaFixa DECIMAL(10,2) NOT NULL DEFAULT 5.00,
+    Status VARCHAR(20) NOT NULL DEFAULT 'ativo' CHECK (Status IN ('ativo', 'cancelado', 'encerrado'))
+);
+
+CREATE TABLE Setores(
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    EventoId INT NOT NULL,
+    Nome VARCHAR(50) NOT NULL,
+    Preco DECIMAL(10,2) NOT NULL,
+    Cor VARCHAR(7) NULL,
+    Capacidade INT NULL,
+    Ordem INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (EventoId) REFERENCES Eventos(Id) ON DELETE CASCADE
 );
 
 CREATE TABLE Cupons(
@@ -106,8 +119,8 @@ CREATE INDEX IX_FilaEvento_UsuarioCpf ON FilaEvento(UsuarioCpf);
 CREATE INDEX IX_FilaEvento_Status ON FilaEvento(Status);
 
 -- Insert default admin user (password: "admin123" hashed with BCrypt)
-INSERT INTO Usuarios (Cpf, Nome, Email, SenhaHash) VALUES 
-('00000000000', 'Administrador', 'admin@ticketprime.com', '$2a$11$K7Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y');
+INSERT INTO Usuarios (Cpf, Nome, Email, SenhaHash, IsAdmin) VALUES
+('00000000000', 'Administrador', 'admin@ticketprime.com', '$2a$11$K7Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y', 1);
 
 -- Insert sample event
 INSERT INTO Eventos (Nome, CapacidadeTotal, DataEvento, PrecoPadrao, LocalNome, LocalCidade, TipoEvento) VALUES

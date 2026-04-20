@@ -1,3 +1,4 @@
+@using MudBlazor
 @using TicketPrime.Web.Models
 @using TicketPrime.Web.Services
 @inject IApiService Api
@@ -9,10 +10,22 @@
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" Model="_model">
-            <MudTextField @bind-Value="_model.Nome" Label="Nome" Required="true" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_model.Nome" Label="Nome do evento" Required="true" Variant="Variant.Outlined" Class="mb-3" />
+            <MudSelect @bind-Value="_model.TipoEvento" Label="Tipo de evento" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem Value="@("show")">Show</MudSelectItem>
+                <MudSelectItem Value="@("theater")">Teatro</MudSelectItem>
+                <MudSelectItem Value="@("stadium")">Estádio</MudSelectItem>
+            </MudSelect>
             <MudNumericField @bind-Value="_model.CapacidadeTotal" Label="Capacidade total" Min="1" Variant="Variant.Outlined" Class="mb-3" />
             <MudDatePicker @bind-Date="_data" Label="Data do evento" Variant="Variant.Outlined" Class="mb-3" />
-            <MudNumericField @bind-Value="_model.PrecoPadrao" Label="Preço padrão" Format="N2" Culture="@System.Globalization.CultureInfo.GetCultureInfo("pt-BR")" Variant="Variant.Outlined" />
+            <MudNumericField @bind-Value="_model.PrecoPadrao" Label="Preço padrão (R$)" Format="N2" Culture="@System.Globalization.CultureInfo.GetCultureInfo("pt-BR")" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_model.Descricao" Label="Descrição" Lines="3" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_model.LocalNome" Label="Local (nome)" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_model.LocalCidade" Label="Cidade" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_model.BannerUrl" Label="URL do banner (imagem)" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_model.GaleriaTexto" Label="Galeria (texto)" Lines="2" Variant="Variant.Outlined" Class="mb-3" />
+            <MudNumericField @bind-Value="_model.TaxaFixa" Label="Taxa fixa (R$)" Format="N2" Culture="@System.Globalization.CultureInfo.GetCultureInfo("pt-BR")" Variant="Variant.Outlined" Class="mb-3" />
+            <MudCheckbox Checked="@_model.GerarSetoresAutomaticos" CheckedChanged="@( (bool v) => _model.GerarSetoresAutomaticos = v )" Label="Gerar setores automaticamente (A, B, C)" Class="mb-3" />
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -56,11 +69,28 @@
                 _model.Nome.Trim(),
                 _model.CapacidadeTotal,
                 _data.Value.Date,
-                _model.PrecoPadrao);
+                _model.PrecoPadrao,
+                _model.TipoEvento,
+                _model.Descricao,
+                _model.LocalNome,
+                _model.LocalCidade,
+                _model.BannerUrl,
+                _model.GaleriaTexto,
+                _model.TaxaFixa,
+                Status: "ativo");
 
             var result = await Api.PostEventoAsync(dto);
             if (result.Success)
             {
+                var eventoId = result.Data!.Id;
+                if (_model.GerarSetoresAutomaticos)
+                {
+                    var setoresResult = await Api.GerarSetoresAsync(eventoId);
+                    if (setoresResult.Success)
+                        Snackbar.Add("Setores gerados automaticamente.", Severity.Success);
+                    else
+                        Snackbar.Add("Evento criado, mas falha ao gerar setores.", Severity.Warning);
+                }
                 Snackbar.Add("Evento cadastrado com sucesso.", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
             }
@@ -76,7 +106,15 @@
     private sealed class EventoFormModel
     {
         public string Nome { get; set; } = string.Empty;
+        public string TipoEvento { get; set; } = "show";
         public int CapacidadeTotal { get; set; } = 100;
         public decimal PrecoPadrao { get; set; } = 0;
+        public string Descricao { get; set; } = string.Empty;
+        public string LocalNome { get; set; } = string.Empty;
+        public string LocalCidade { get; set; } = string.Empty;
+        public string BannerUrl { get; set; } = string.Empty;
+        public string GaleriaTexto { get; set; } = string.Empty;
+        public decimal? TaxaFixa { get; set; }
+        public bool GerarSetoresAutomaticos { get; set; } = true;
     }
 }

@@ -21,10 +21,10 @@ public sealed class ApiService(HttpClient http) : IApiService
         return list ?? [];
     }
 
-    public async Task<ApiResult> PostEventoAsync(EventoCreateDto dto, CancellationToken cancellationToken = default)
+    public async Task<ApiResult<EventoDto>> PostEventoAsync(EventoCreateDto dto, CancellationToken cancellationToken = default)
     {
         var response = await http.PostAsJsonAsync("api/eventos", dto, JsonOptions, cancellationToken);
-        return await MapResultAsync(response, cancellationToken);
+        return await MapResultAsync<EventoDto>(response, cancellationToken);
     }
 
     public async Task<ApiResult> PostCupomAsync(CupomDto dto, CancellationToken cancellationToken = default)
@@ -139,6 +139,55 @@ public sealed class ApiService(HttpClient http) : IApiService
     {
         var response = await http.PostAsync($"api/reservas/{reservaId}/cancelar", null, cancellationToken);
         return await MapResultAsync(response, cancellationToken);
+    }
+
+    public async Task<AdminMetricas> GetAdminMetricasAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await http.GetAsync("api/admin/metricas", cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var metricas = await response.Content.ReadFromJsonAsync<AdminMetricas>(JsonOptions, cancellationToken);
+        return metricas ?? new AdminMetricas(0, 0, 0, 0);
+    }
+
+    public async Task<IReadOnlyList<SetorDto>> GetSetoresAsync(int eventoId, CancellationToken cancellationToken = default)
+    {
+        var response = await http.GetAsync($"api/eventos/{eventoId}/setores", cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var list = await response.Content.ReadFromJsonAsync<List<SetorDto>>(JsonOptions, cancellationToken);
+        return list ?? [];
+    }
+
+    public async Task<ApiResult> PostSetorAsync(int eventoId, SetorCreateDto dto, CancellationToken cancellationToken = default)
+    {
+        var response = await http.PostAsJsonAsync($"api/eventos/{eventoId}/setores", dto, JsonOptions, cancellationToken);
+        return await MapResultAsync(response, cancellationToken);
+    }
+
+    public async Task<ApiResult> GerarSetoresAsync(int eventoId, CancellationToken cancellationToken = default)
+    {
+        var response = await http.PostAsync($"api/eventos/{eventoId}/gerar-setores", null, cancellationToken);
+        return await MapResultAsync(response, cancellationToken);
+    }
+
+    public async Task<ApiResult> CancelarEventoAsync(int eventoId, CancellationToken cancellationToken = default)
+    {
+        var response = await http.PostAsync($"api/eventos/{eventoId}/cancelar", null, cancellationToken);
+        return await MapResultAsync(response, cancellationToken);
+    }
+
+    private static async Task<ApiResult<T>> MapResultAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            var data = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
+            return ApiResult<T>.Ok(data!);
+        }
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var message = string.IsNullOrWhiteSpace(body)
+            ? $"Erro {(int)response.StatusCode}: {response.ReasonPhrase}"
+            : body.Trim();
+        return ApiResult<T>.Fail(message);
     }
 
     private static async Task<ApiResult> MapResultAsync(HttpResponseMessage response, CancellationToken cancellationToken)
