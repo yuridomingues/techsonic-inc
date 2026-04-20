@@ -7,5 +7,17 @@ public interface IApiService
     Task<IReadOnlyList<EventoDto>> GetEventosAsync(CancellationToken cancellationToken = default);
     Task<ApiResult> PostEventoAsync(EventoCreateDto dto, CancellationToken cancellationToken = default);
     Task<ApiResult> PostCupomAsync(CupomDto dto, CancellationToken cancellationToken = default);
-    Task<ApiResult> PostUsuarioAsync(UsuarioDto dto, CancellationToken cancellationToken = default);
+    Task<ApiResult> PostUsuarioAsync(UsuarioCreateDto dto, CancellationToken cancellationToken = default);
+
+    Task<LoginResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AssentoDto>> GetAssentosAsync(int eventoId, CancellationToken cancellationToken = default);
+    Task<AssentoLockResponse?> LockAssentoAsync(AssentoLockRequest request, CancellationToken cancellationToken = default);
+    Task<ApiResult> ReleaseAssentoAsync(int seatId, CancellationToken cancellationToken = default);
+    Task<FilaResponse?> JoinFilaAsync(FilaRequest request, CancellationToken cancellationToken = default);
+    Task<ApiResult> LeaveFilaAsync(int eventoId, CancellationToken cancellationToken = default);
+    Task<FilaDto?> GetFilaPositionAsync(int eventoId, CancellationToken cancellationToken = default);
+    Task<ReservaDto?> CreateReservaAsync(ReservaCreateDto dto, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ReservaDto>> GetReservasAsync(CancellationToken cancellationToken = default);
+    Task<PagamentoDto?> SimulatePagamentoAsync(int reservaId, PagamentoCreateDto dto, CancellationToken cancellationToken = default);
+    Task<ApiResult> CancelReservaAsync(int reservaId, CancellationToken cancellationToken = default);
 }
