@@ -25,12 +25,21 @@
             <MudTh>Capacidade total</MudTh>
             <MudTh>Data</MudTh>
             <MudTh Style="text-align:right">Preço</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Ações</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Nome">@context.Nome</MudTd>
             <MudTd DataLabel="Capacidade total">@context.CapacidadeTotal</MudTd>
             <MudTd DataLabel="Data">@context.DataEvento.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
             <MudTd DataLabel="Preço" Style="text-align:right">@context.PrecoPadrao.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Variant="Variant.Filled" Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Ações">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => EditarEvento(context.Id))" Class="mr-2" />
+                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error" OnClick="@(() => CancelarEventoAsync(context.Id))" Disabled="@(context.Status == "cancelado")" />
+            </MudTd>
         </RowTemplate>
         <NoRecordsContent>
             <MudText Class="pa-4">Nenhum evento encontrado.</MudText>
@@ -78,5 +87,35 @@
         var result = await dialog.Result;
         if (result is not null && !result.Canceled)
             await CarregarAsync();
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "ativo" => Color.Success,
+            "cancelado" => Color.Error,
+            "encerrado" => Color.Warning,
+            _ => Color.Default
+        };
+    }
+
+    private void EditarEvento(int id)
+    {
+        Snackbar.Add($"Edição do evento {id} ainda não implementada.", Severity.Warning);
+    }
+
+    private async Task CancelarEventoAsync(int id)
+    {
+        var result = await Api.CancelarEventoAsync(id);
+        if (result.Success)
+        {
+            Snackbar.Add("Evento cancelado com sucesso.", Severity.Success);
+            await CarregarAsync();
+        }
+        else
+        {
+            Snackbar.Add($"Falha ao cancelar evento: {result.ErrorMessage}", Severity.Error);
+        }
     }
 }

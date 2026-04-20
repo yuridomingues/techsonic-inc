@@ -5,7 +5,7 @@ namespace TicketPrime.Web.Services;
 public interface IApiService
 {
     Task<IReadOnlyList<EventoDto>> GetEventosAsync(CancellationToken cancellationToken = default);
-    Task<ApiResult> PostEventoAsync(EventoCreateDto dto, CancellationToken cancellationToken = default);
+    Task<ApiResult<EventoDto>> PostEventoAsync(EventoCreateDto dto, CancellationToken cancellationToken = default);
     Task<ApiResult> PostCupomAsync(CupomDto dto, CancellationToken cancellationToken = default);
     Task<ApiResult> PostUsuarioAsync(UsuarioCreateDto dto, CancellationToken cancellationToken = default);
 
@@ -20,4 +20,10 @@ public interface IApiService
     Task<IReadOnlyList<ReservaDto>> GetReservasAsync(CancellationToken cancellationToken = default);
     Task<PagamentoDto?> SimulatePagamentoAsync(int reservaId, PagamentoCreateDto dto, CancellationToken cancellationToken = default);
     Task<ApiResult> CancelReservaAsync(int reservaId, CancellationToken cancellationToken = default);
+    
+    Task<AdminMetricas> GetAdminMetricasAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SetorDto>> GetSetoresAsync(int eventoId, CancellationToken cancellationToken = default);
+    Task<ApiResult> PostSetorAsync(int eventoId, SetorCreateDto dto, CancellationToken cancellationToken = default);
+    Task<ApiResult> GerarSetoresAsync(int eventoId, CancellationToken cancellationToken = default);
+    Task<ApiResult> CancelarEventoAsync(int eventoId, CancellationToken cancellationToken = default);
 }
