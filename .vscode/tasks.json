@@ -41,7 +41,6 @@
 				"run",
 				"--project",
 				"src/techsonic-inc.csproj",
-				"--no-build",
 				"--urls",
 				"http://localhost:5000"
 			],
