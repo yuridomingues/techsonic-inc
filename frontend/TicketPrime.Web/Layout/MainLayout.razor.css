@@ -1,20 +1,26 @@
 .tp-appbar {
-    background-color: var(--mud-palette-surface) !important;
-    border-bottom: 1px solid var(--mud-palette-divider);
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.86), rgba(15, 23, 42, 0.78)) !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    backdrop-filter: blur(14px);
 }
 
 .tp-drawer {
-    background-color: var(--mud-palette-surface);
-    border-right: 1px solid var(--mud-palette-divider);
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.96) 100%);
+    border-right: 1px solid rgba(148, 163, 184, 0.12);
+    backdrop-filter: blur(12px);
 }
 
 .tp-main {
     min-height: calc(100vh - 64px);
-    background-color: var(--mud-palette-background);
+    background: transparent;
 }
 
 .tp-brand {
     color: var(--mud-palette-text-primary);
+}
+
+.tp-brand-name {
+    white-space: nowrap;
 }
 
 .tp-brand-logo {
@@ -22,8 +28,46 @@
     height: 36px;
     display: block;
     object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(8, 145, 178, 0.18);
 }
 
 .tp-appbar-kicker {
     color: var(--mud-palette-text-secondary);
+}
+
+.tp-appbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.tp-appbar-user {
+    white-space: nowrap;
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 959.98px) {
+    .tp-appbar-kicker,
+    .tp-appbar-user,
+    .tp-appbar-secondary-action {
+        display: none !important;
+    }
+
+    .tp-appbar-actions {
+        gap: 0.2rem;
+    }
+
+    .tp-brand-logo {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+@media (max-width: 599.98px) {
+    .tp-brand-name {
+        font-size: 0.95rem;
+    }
 }

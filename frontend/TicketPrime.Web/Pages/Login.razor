@@ -1,108 +1,147 @@
 @page "/login"
+@using Microsoft.AspNetCore.Components.Web
 @using MudBlazor
-@inject IJSRuntime JS
-@* Icon="@Icons.Material.Filled.Email"  <- Caso queira os icons ao lado do email*@
-@* <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="mr-1" /> <- Caso queira os icons ao lado da senha*@
+@inject IApiService Api
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
 
-<MudStack Spacing="1" Class="mb-4 tp-page-header">
+<PageTitle>TicketPrime - Entrar</PageTitle>
 
-        <MudStack Spacing="1" Class="mb-4 tp-page-header">
-            <div>
-                <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Bem-vindo</MudText>
-                <MudText Typo="Typo.body2" Class="mb-2 mb-sm-3" Style="color: var(--mud-palette-text-secondary);">
-                    Insira seus dados para logar.
-                </MudText>
+<MudGrid Spacing="3" Class="tp-auth-layout">
+    <MudItem xs="12" md="5" Class="tp-auth-info-column">
+        <div class="tp-feature-card">
+            <div class="tp-kicker">Acesso Seguro</div>
+            <MudText Typo="Typo.h3" Class="mt-4">Entre para operar reservas, catálogo e painéis protegidos.</MudText>
+            <MudText Typo="Typo.body1" Class="mt-4" Style="color: #cbd5e1;">
+                O login libera histórico de reservas para clientes e áreas operacionais para contas administrativas.
+            </MudText>
+
+            <div class="tp-feature-list">
+                <div class="tp-feature-item">
+                    <span class="tp-feature-dot"></span>
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Sessão persistente</MudText>
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Seu token é reaproveitado no navegador para manter o fluxo contínuo.</MudText>
+                    </div>
+                </div>
+                <div class="tp-feature-item">
+                    <span class="tp-feature-dot"></span>
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Reservas centralizadas</MudText>
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Acompanhe pagamentos, cancelamentos e cupons em um só lugar.</MudText>
+                    </div>
+                </div>
+                <div class="tp-feature-item">
+                    <span class="tp-feature-dot"></span>
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Operação administrativa</MudText>
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Contas admin ganham acesso a métricas, cupons e gestão da agenda.</MudText>
+                    </div>
+                </div>
             </div>
-        </MudStack>
+        </div>
+    </MudItem>
+    <MudItem xs="12" md="7" Class="tp-auth-form-column">
+        <MudPaper Class="pa-6 tp-form" Elevation="0" Style="width: 100%;">
+            <div class="tp-kicker">Entrar</div>
+            <MudText Typo="Typo.h4" GutterBottom="true" Class="mt-4 tp-page-title">Acesse sua conta TicketPrime</MudText>
+            <MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+                Use seu CPF e senha para acessar as áreas protegidas do TicketPrime.
+            </MudText>
 
-        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4" Elevation="0" ContentAlignment="HorizontalAlignment.Start">
-           Insira seus dados para cadastro
-        </MudAlert>
+            <MudForm @ref="_form" Model="_model">
+                <MudTextField @bind-Value="_model.Cpf"
+                              Label="CPF"
+                              Mask="@(new PatternMask("000.000.000-00"))"
+                              Variant="Variant.Outlined"
+                              Required="true"
+                              Class="mb-4" />
 
-        <MudPaper Class="pa-3 pa-sm-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
-    <MudForm @ref="_form" Model="_model">
-        <MudTextField @bind-Value="_model.Email"
-                      Label="E-mail"
-                      Variant="Variant.Outlined"
-                      Required="true"
-                      InputType="InputType.Email"
-                      Class="mb-6" />
+                <MudTextField @bind-Value="_model.Senha"
+                              Label="Senha"
+                              Variant="Variant.Outlined"
+                              InputType="InputType.Password"
+                              Required="true"
+                              Class="mb-6" />
 
-        <MudTextField @bind-Value="_model.Senha"
-                      Label="Senha"
-                      Variant="Variant.Outlined"
-                      Required="true"
-                      InputType="@(mostrarSenha ? InputType.Text : InputType.Password)"
-                      Adornment="Adornment.End"
-                      AdornmentIcon="@(mostrarSenha ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
-                      OnAdornmentClick="() => mostrarSenha = !mostrarSenha"
-                      Class="mb-4" />
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           Class="tp-action"
+                           Disabled="_submitting"
+                           OnClick="EntrarAsync">
+                    Entrar
+                </MudButton>
 
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   Size="Size.Large"
-                   FullWidth="true"
-                   Style="border-radius: 12px; padding: 14px;"
-                   OnClick="Entrar"
-                   Disabled="@carregando">
-            @if (carregando)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                <span>Entrando...</span>
-            }
-            else
-            {
-                <span>Entrar</span>
-            }
-        </MudButton>
-    </MudForm>
-    </MudPaper>
+                @if (_submitting)
+                {
+                    <MudProgressLinear Class="mt-4" Indeterminate="true" Color="Color.Primary" />
+                }
+            </MudForm>
 
-        @* Mensagem de erro *@
-        @if (!string.IsNullOrEmpty(erro))
-        {
-            <MudAlert Severity="Severity.Error" Dense="true">@erro</MudAlert>
-        }
-
-</MudStack>
+            <MudDivider Class="my-5" />
+            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                Ainda não tem conta?
+                <MudLink Href="/usuarios">Cadastre-se para começar.</MudLink>
+            </MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
-    private MudForm _form = default!;
-    private bool mostrarSenha = false;
-    private bool carregando = false;
-    private string erro = string.Empty;
+    private MudForm? _form;
+    private readonly LoginFormModel _model = new();
+    private bool _submitting;
 
-    private LoginModel _model = new();
-
-    private class LoginModel
+    protected override async Task OnInitializedAsync()
     {
-        public string Email { get; set; } = string.Empty;
-        public string Senha { get; set; } = string.Empty;
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo(authState.User.IsInRole("Admin") ? "/admin" : "/reservas");
+        }
     }
 
-    [Inject] private NavigationManager Nav { get; set; } = default!;
-
-    private async Task Entrar()
+    private async Task EntrarAsync()
     {
-        erro = string.Empty;
-
-        await _form.Validate();
-
-        if (!_form.IsValid)
+        await (_form?.ValidateAsync() ?? Task.CompletedTask);
+        if (_form is not null && !_form.IsValid)
             return;
 
-        carregando = true;
-
-        // substituir pela nossa lógica real
-        if (_model.Email == "teste@teste.com" && _model.Senha == "123456")
+        _submitting = true;
+        try
         {
-            Nav.NavigateTo("/");
-        }
-        else
-        {
-            erro = "E-mail ou senha incorretos.";
-        }
+            var cpf = new string(_model.Cpf.Where(char.IsDigit).ToArray());
+            var result = await Api.LoginAsync(new LoginRequest(cpf, _model.Senha));
+            if (!result.Success || result.Data is null)
+            {
+                Snackbar.Add(result.ErrorMessage ?? "CPF ou senha invalidos.", Severity.Error);
+                return;
+            }
 
-        carregando = false;
+            var response = result.Data;
+
+            if (AuthenticationStateProvider is not AppAuthenticationStateProvider authProvider)
+            {
+                Snackbar.Add("Não foi possível iniciar a sessão agora.", Severity.Error);
+                return;
+            }
+
+            await authProvider.SignInAsync(response);
+            Snackbar.Add("Sessão iniciada com sucesso.", Severity.Success);
+            Navigation.NavigateTo(response.IsAdmin ? "/admin" : "/reservas");
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private sealed class LoginFormModel
+    {
+        public string Cpf { get; set; } = string.Empty;
+        public string Senha { get; set; } = string.Empty;
     }
 }

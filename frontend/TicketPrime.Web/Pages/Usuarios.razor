@@ -1,88 +1,248 @@
 @page "/usuarios"
 @inject IApiService Api
+@inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @using MudBlazor
 @using Microsoft.AspNetCore.Components.Web
+@using System.Net.Mail
 
 <PageTitle>TicketPrime - Usuários</PageTitle>
 
-<MudStack Spacing="1" Class="mb-4 tp-page-header">
-    <div>
-        <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Cadastro de usuários</MudText>
-        <MudText Typo="Typo.body2" Class="mb-2 mb-sm-3" Style="color: var(--mud-palette-text-secondary);">
-            Inclua participantes com CPF, nome e e-mail. Os dados são validados ao salvar.
-        </MudText>
-    </div>
-</MudStack>
+<MudGrid Spacing="3" Class="tp-auth-layout" Justify="Justify.Center">
+    <MudItem xs="12" md="8" lg="6" Class="tp-auth-form-column">
+        <MudStack Spacing="2">
+            @if (_emailValidado)
+            {
+                <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Dense="true" Elevation="0">
+                    Conta validada com sucesso. Voce ja pode entrar e acessar as reservas.
+                    <MudButton Variant="Variant.Text" Color="Color.Success" OnClick="IrParaLogin" Class="ml-2">Ir para login</MudButton>
+                </MudAlert>
+            }
+            else if (_cadastroPendente is not null)
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Elevation="0">
+                    Codigo enviado para @_cadastroPendente.Email. Expira em @_cadastroPendente.CodigoExpiraEm.ToLocalTime().ToString("dd/MM HH:mm"). @_cadastroPendente.MensagemEntrega
+                </MudAlert>
+            }
 
-<MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4" Elevation="0" ContentAlignment="HorizontalAlignment.Start">
-    Cada CPF pode ser cadastrado apenas uma vez. Se já existir, você verá um aviso na tela.
-</MudAlert>
+            <MudPaper Class="pa-6 tp-form" Elevation="0">
+                <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Criar conta</MudText>
 
-<MudPaper Class="pa-3 pa-sm-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
-    <MudForm @ref="_form" Model="_model">
-        <MudTextField @bind-Value="_model.Cpf"
-                      Label="CPF"
-                      Mask="@(new PatternMask("000.000.000-00"))"
-                      Variant="Variant.Outlined"
-                      Required="true"
-                      Class="mb-4" />
+                <MudForm @ref="_form" Model="_model">
+                    <MudTextField @bind-Value="_model.Cpf"
+                                  Label="CPF"
+                                  Mask="@(new PatternMask("000.000.000-00"))"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  Validation="@(new Func<string, IEnumerable<string>>(ValidarCpf))"
+                                  Class="mb-4" />
 
-        <MudTextField @bind-Value="_model.Nome"
-                      Label="Nome completo"
-                      Variant="Variant.Outlined"
-                      Required="true"
-                      Class="mb-4" />
+                    <MudTextField @bind-Value="_model.Nome"
+                                  Label="Nome completo"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  Validation="@(new Func<string, IEnumerable<string>>(ValidarNome))"
+                                  Class="mb-4" />
 
-        <MudTextField @bind-Value="_model.Email"
-                      Label="E-mail"
-                      Variant="Variant.Outlined"
-                      Required="true"
-                      InputType="InputType.Email"
-                      Class="mb-6" />
+                    <MudTextField @bind-Value="_model.Email"
+                                  Label="E-mail"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  InputType="InputType.Email"
+                                  Validation="@(new Func<string, IEnumerable<string>>(ValidarEmail))"
+                                  Class="mb-6" />
 
-        <MudTextField @bind-Value="_model.Senha"
-                      Label="Senha"
-                      Variant="Variant.Outlined"
-                      Required="true"
-                      InputType="InputType.Password"
-                      HelperText="Mínimo 8 caracteres"
-                      Validation="@(new Func<string, IEnumerable<string>>(ValidarSenha))"
-                      Class="mb-4" />
+                    <MudTextField @bind-Value="_model.Senha"
+                                  Label="Senha"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  InputType="InputType.Password"
+                                  HelperText="Minimo 8 caracteres, com maiuscula, minuscula, especial e dois numeros diferentes"
+                                  Validation="@(new Func<string, IEnumerable<string>>(ValidarSenha))"
+                                  Class="mb-4" />
 
-        <MudTextField @bind-Value="_model.ConfirmacaoSenha"
-                      Label="Confirmar Senha"
-                      Variant="Variant.Outlined"
-                      Required="true"
-                      InputType="InputType.Password"
-                      Validation="@(new Func<string, IEnumerable<string>>(ValidarConfirmacaoSenha))"
-                      Class="mb-6" />
+                    <MudTextField @bind-Value="_model.ConfirmacaoSenha"
+                                  Label="Confirmar Senha"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  InputType="InputType.Password"
+                                  Validation="@(new Func<string, IEnumerable<string>>(ValidarConfirmacaoSenha))"
+                                  Class="mb-6" />
 
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   Class="tp-action"
-                   Size="Size.Large"
-                   FullWidth="true"
-                   Disabled="_saving"
-                   OnClick="SalvarAsync">
-            Cadastrar usuário
-        </MudButton>
-    </MudForm>
-</MudPaper>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Class="tp-action"
+                               Size="Size.Large"
+                               FullWidth="true"
+                               Disabled="_saving"
+                               OnClick="SalvarAsync">
+                        Cadastrar usuário
+                    </MudButton>
+
+                    <MudText Typo="Typo.body2" Class="mt-4" Style="color: var(--mud-palette-text-secondary);">
+                        Já possui conta?
+                        <MudLink Href="/login">Entrar agora.</MudLink>
+                    </MudText>
+                </MudForm>
+            </MudPaper>
+
+            @if (_cadastroPendente is not null && !_emailValidado)
+            {
+                <MudPaper Class="pa-6 tp-form" Elevation="0">
+                    <MudText Typo="Typo.h6" GutterBottom="true">Validar e-mail</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Style="color: var(--mud-palette-text-secondary);">
+                        Digite o codigo de 6 digitos enviado para o seu e-mail para liberar o login da conta.
+                    </MudText>
+
+                    <MudTextField @bind-Value="_codigoVerificacao"
+                                  Label="Codigo de verificacao"
+                                  Variant="Variant.Outlined"
+                                  Validation="@(new Func<string, IEnumerable<string>>(ValidarCodigoVerificacao))"
+                                  Class="mb-4" />
+
+                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Class="tp-action"
+                                   Disabled="_validandoCodigo"
+                                   OnClick="ValidarEmailAsync">
+                            Validar conta
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   Disabled="_reenviandoCodigo"
+                                   OnClick="ReenviarCodigoAsync">
+                            Reenviar codigo
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            }
+        </MudStack>
+    </MudItem>
+</MudGrid>
 
 @code {
     private MudForm? _form;
     private readonly UsuarioFormModel _model = new();
     private bool _saving;
+    private bool _emailValidado;
+    private bool _validandoCodigo;
+    private bool _reenviandoCodigo;
+    private string _codigoVerificacao = string.Empty;
+    private UsuarioCadastroResponse? _cadastroPendente;
+
+    private static readonly string[] DominiosConhecidos = ["gmail.com", "hotmail.com", "outlook.com", "live.com"];
+    private static readonly Dictionary<string, string> DominiosComunsCorrigidos = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["gnail.com"] = "gmail.com",
+        ["gmai.com"] = "gmail.com",
+        ["gmial.com"] = "gmail.com",
+        ["gmail.con"] = "gmail.com",
+        ["hotnail.com"] = "hotmail.com",
+        ["hotmai.com"] = "hotmail.com",
+        ["hotmail.con"] = "hotmail.com",
+        ["outlok.com"] = "outlook.com",
+        ["outlook.con"] = "outlook.com",
+        ["otlook.com"] = "outlook.com",
+    };
+
+    private IEnumerable<string> ValidarCpf(string cpf)
+    {
+        var digits = new string((cpf ?? string.Empty).Where(char.IsDigit).ToArray());
+        if (string.IsNullOrWhiteSpace(cpf))
+            return ["CPF e obrigatorio."];
+
+        if (digits.Length != 11)
+            return ["CPF deve conter 11 digitos."];
+
+        if (digits.Distinct().Count() == 1)
+            return ["CPF nao pode ser uma sequencia repetida."];
+
+        if (!CpfDigitosConferem(digits))
+            return ["CPF invalido."];
+
+        return Enumerable.Empty<string>();
+    }
+
+    private IEnumerable<string> ValidarNome(string nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+            return ["Nome completo e obrigatorio."];
+
+        var partes = nome.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (partes.Length < 2)
+            return ["Informe nome e sobrenome."];
+
+        if (partes[0].Length < 2 || partes[^1].Length < 2)
+            return ["Nome e sobrenome devem ter pelo menos 2 caracteres."];
+
+        return Enumerable.Empty<string>();
+    }
+
+    private IEnumerable<string> ValidarEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return ["E-mail e obrigatorio."];
+
+        try
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            var address = new MailAddress(normalizedEmail);
+            if (!string.Equals(address.Address, normalizedEmail, StringComparison.OrdinalIgnoreCase))
+                return ["E-mail invalido."];
+
+            var partes = normalizedEmail.Split('@', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (partes.Length != 2)
+                return ["E-mail invalido."];
+
+            var dominio = partes[1];
+            var sugestao = ObterSugestaoDominio(dominio);
+            if (sugestao is not null)
+                return [$"Dominio de e-mail parece incorreto. Verifique se o correto e {sugestao}."];
+
+            return Enumerable.Empty<string>();
+        }
+        catch (FormatException)
+        {
+            return ["E-mail invalido."];
+        }
+    }
 
     private IEnumerable<string> ValidarSenha(string senha)
     {
         var erros = new List<string>();
         
         if (string.IsNullOrWhiteSpace(senha))
-            erros.Add("Senha é obrigatória.");
-        else if (senha.Length < 8)
-            erros.Add("Senha deve ter no mínimo 8 caracteres.");
+        {
+            erros.Add("Senha e obrigatoria.");
+            return erros;
+        }
+
+        if (senha.Length < 8)
+            erros.Add("Senha deve ter no minimo 8 caracteres.");
+
+        if (!senha.Any(char.IsUpper))
+            erros.Add("Senha deve conter ao menos uma letra maiuscula.");
+
+        if (!senha.Any(char.IsLower))
+            erros.Add("Senha deve conter ao menos uma letra minuscula.");
+
+        var digitos = senha.Where(char.IsDigit).ToArray();
+        if (digitos.Length == 0)
+        {
+            erros.Add("Senha deve conter ao menos um numero.");
+        }
+        else
+        {
+            if (digitos.Distinct().Count() < 2)
+                erros.Add("Senha deve conter pelo menos dois numeros diferentes.");
+
+            if (digitos.GroupBy(digito => digito).Any(grupo => grupo.Count() > 3))
+                erros.Add("O mesmo numero nao pode aparecer mais de 3 vezes na senha.");
+        }
+
+        if (!senha.Any(caractere => !char.IsLetterOrDigit(caractere)))
+            erros.Add("Senha deve conter ao menos um caractere especial.");
         
         return erros;
     }
@@ -93,8 +253,20 @@
             return new[] { "Confirmação de senha é obrigatória." };
         
         if (confirmacao != _model.Senha)
-            return new[] { "As senhas não correspondem." };
+            return new[] { "As senhas nao correspondem." };
         
+        return Enumerable.Empty<string>();
+    }
+
+    private IEnumerable<string> ValidarCodigoVerificacao(string codigo)
+    {
+        var normalizedCode = (codigo ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedCode))
+            return ["Codigo e obrigatorio."];
+
+        if (normalizedCode.Length != 6 || !normalizedCode.All(char.IsDigit))
+            return ["Codigo deve conter 6 digitos."];
+
         return Enumerable.Empty<string>();
     }
 
@@ -105,15 +277,22 @@
             return;
 
         _saving = true;
+        _emailValidado = false;
         try
         {
             var digits = new string(_model.Cpf.Where(char.IsDigit).ToArray());
             var dto = new TicketPrime.Web.Models.UsuarioCreateDto(digits, _model.Nome.Trim(), _model.Email.Trim(), _model.Senha);
 
             var result = await Api.PostUsuarioAsync(dto);
-            if (result.Success)
+            if (result.Success && result.Data is not null)
             {
-                Snackbar.Add("Usuário cadastrado com sucesso.", Severity.Success);
+                _cadastroPendente = result.Data;
+                _codigoVerificacao = string.Empty;
+                Snackbar.Add(
+                    result.Data.CodigoEnviado
+                        ? "Conta criada. Confira o codigo enviado para validar o e-mail."
+                        : "Conta criada, mas o codigo nao foi entregue. Use o reenvio abaixo.",
+                    result.Data.CodigoEnviado ? Severity.Success : Severity.Warning);
                 await LimparFormulario();
             }
             else
@@ -132,6 +311,78 @@
         }
     }
 
+    private async Task ValidarEmailAsync()
+    {
+        if (_cadastroPendente is null)
+            return;
+
+        var erros = ValidarCodigoVerificacao(_codigoVerificacao).ToList();
+        if (erros.Count > 0)
+        {
+            Snackbar.Add(erros[0], Severity.Warning);
+            return;
+        }
+
+        _validandoCodigo = true;
+        try
+        {
+            var result = await Api.VerifyUserEmailAsync(new UsuarioEmailVerificationRequest(_cadastroPendente.Cpf, _codigoVerificacao.Trim()));
+            if (result.Success)
+            {
+                _emailValidado = true;
+                _cadastroPendente = null;
+                _codigoVerificacao = string.Empty;
+                Snackbar.Add(result.Data?.Message ?? "E-mail validado com sucesso.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(result.ErrorMessage ?? "Nao foi possivel validar o e-mail.", Severity.Error);
+            }
+        }
+        finally
+        {
+            _validandoCodigo = false;
+        }
+    }
+
+    private async Task ReenviarCodigoAsync()
+    {
+        if (_cadastroPendente is null)
+            return;
+
+        _reenviandoCodigo = true;
+        try
+        {
+            var result = await Api.ResendUserVerificationCodeAsync(new UsuarioCodigoReenvioRequest(_cadastroPendente.Cpf));
+            if (result.Success && result.Data is not null)
+            {
+                _cadastroPendente = _cadastroPendente with
+                {
+                    CodigoExpiraEm = result.Data.CodigoExpiraEm,
+                    CodigoEnviado = result.Data.CodigoEnviado,
+                    MetodoEntrega = result.Data.MetodoEntrega,
+                    MensagemEntrega = result.Data.MensagemEntrega,
+                };
+
+                Snackbar.Add(
+                    result.Data.CodigoEnviado
+                        ? "Novo codigo enviado com sucesso."
+                        : "Novo codigo gerado, mas sem entrega externa. Consulte a mensagem informada.",
+                    result.Data.CodigoEnviado ? Severity.Success : Severity.Warning);
+            }
+            else
+            {
+                Snackbar.Add(result.ErrorMessage ?? "Nao foi possivel reenviar o codigo.", Severity.Error);
+            }
+        }
+        finally
+        {
+            _reenviandoCodigo = false;
+        }
+    }
+
+    private void IrParaLogin() => Navigation.NavigateTo("/login");
+
     private async Task LimparFormulario()
     {
         _model.Cpf = string.Empty;
@@ -143,6 +394,67 @@
         {
             await _form.ResetAsync();
         }
+    }
+
+    private static bool CpfDigitosConferem(string cpf)
+    {
+        var somaPrimeiroDigito = 0;
+        for (var index = 0; index < 9; index++)
+            somaPrimeiroDigito += (cpf[index] - '0') * (10 - index);
+
+        var restoPrimeiroDigito = somaPrimeiroDigito % 11;
+        var primeiroDigito = restoPrimeiroDigito < 2 ? 0 : 11 - restoPrimeiroDigito;
+        if (cpf[9] - '0' != primeiroDigito)
+            return false;
+
+        var somaSegundoDigito = 0;
+        for (var index = 0; index < 10; index++)
+            somaSegundoDigito += (cpf[index] - '0') * (11 - index);
+
+        var restoSegundoDigito = somaSegundoDigito % 11;
+        var segundoDigito = restoSegundoDigito < 2 ? 0 : 11 - restoSegundoDigito;
+        return cpf[10] - '0' == segundoDigito;
+    }
+
+    private static string? ObterSugestaoDominio(string dominio)
+    {
+        if (DominiosConhecidos.Contains(dominio, StringComparer.OrdinalIgnoreCase))
+            return null;
+
+        if (DominiosComunsCorrigidos.TryGetValue(dominio, out var dominioCorrigido))
+            return dominioCorrigido;
+
+        foreach (var dominioConhecido in DominiosConhecidos)
+        {
+            if (CalcularDistanciaLevenshtein(dominio, dominioConhecido) <= 2)
+                return dominioConhecido;
+        }
+
+        return null;
+    }
+
+    private static int CalcularDistanciaLevenshtein(string origem, string destino)
+    {
+        var matriz = new int[origem.Length + 1, destino.Length + 1];
+
+        for (var i = 0; i <= origem.Length; i++)
+            matriz[i, 0] = i;
+
+        for (var j = 0; j <= destino.Length; j++)
+            matriz[0, j] = j;
+
+        for (var i = 1; i <= origem.Length; i++)
+        {
+            for (var j = 1; j <= destino.Length; j++)
+            {
+                var custo = origem[i - 1] == destino[j - 1] ? 0 : 1;
+                matriz[i, j] = Math.Min(
+                    Math.Min(matriz[i - 1, j] + 1, matriz[i, j - 1] + 1),
+                    matriz[i - 1, j - 1] + custo);
+            }
+        }
+
+        return matriz[origem.Length, destino.Length];
     }
 
     private sealed class UsuarioFormModel

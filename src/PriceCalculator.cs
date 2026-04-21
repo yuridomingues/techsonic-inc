@@ -2,28 +2,28 @@ namespace TicketPrime.Server;
 
 public static class PriceCalculator
 {
-    public static decimal CalculateFinalPrice(decimal basePrice, decimal discountPercentage, decimal couponMinValue, bool couponValid)
+    public static decimal CalculateFinalPrice(decimal basePrice, decimal discountPercentage, decimal couponMinValue, decimal fixedFeeAmount, bool couponValid)
     {
+        var finalPrice = basePrice;
+
         if (!couponValid)
-            return ApplyFixedFee(basePrice);
+            return ApplyFixedFee(finalPrice, fixedFeeAmount);
 
-        // Coupon is valid only if discount percentage > 0 and coupon minimum value satisfied
         if (discountPercentage <= 0 || basePrice < couponMinValue)
-            return ApplyFixedFee(basePrice);
+            return ApplyFixedFee(finalPrice, fixedFeeAmount);
 
-        var discounted = basePrice * (1 - discountPercentage / 100);
-        return ApplyFixedFee(discounted);
+        finalPrice = basePrice * (1 - discountPercentage / 100);
+        return ApplyFixedFee(finalPrice, fixedFeeAmount);
     }
 
-    private static decimal ApplyFixedFee(decimal price)
+    private static decimal ApplyFixedFee(decimal price, decimal fixedFeeAmount)
     {
-        // Fixed fee of 5%
-        return price * 1.05m;
+        return decimal.Round(price + Math.Max(fixedFeeAmount, 0), 2, MidpointRounding.AwayFromZero);
     }
 
-    public static decimal CalculateTotalWithTickets(decimal basePricePerTicket, int quantity, decimal discountPercentage, decimal couponMinValue, bool couponValid)
+    public static decimal CalculateTotalWithTickets(decimal basePricePerTicket, int quantity, decimal discountPercentage, decimal couponMinValue, decimal fixedFeeAmount, bool couponValid)
     {
         var subtotal = basePricePerTicket * quantity;
-        return CalculateFinalPrice(subtotal, discountPercentage, couponMinValue, couponValid);
+        return CalculateFinalPrice(subtotal, discountPercentage, couponMinValue, fixedFeeAmount, couponValid);
     }
 }

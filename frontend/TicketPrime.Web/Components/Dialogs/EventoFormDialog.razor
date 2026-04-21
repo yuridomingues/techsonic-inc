@@ -13,8 +13,9 @@
             <MudTextField @bind-Value="_model.Nome" Label="Nome do evento" Required="true" Variant="Variant.Outlined" Class="mb-3" />
             <MudSelect @bind-Value="_model.TipoEvento" Label="Tipo de evento" Variant="Variant.Outlined" Class="mb-3" Required="true">
                 <MudSelectItem Value="@("show")">Show</MudSelectItem>
-                <MudSelectItem Value="@("theater")">Teatro</MudSelectItem>
-                <MudSelectItem Value="@("stadium")">Estádio</MudSelectItem>
+                <MudSelectItem Value="@("teatro")">Teatro</MudSelectItem>
+                <MudSelectItem Value="@("estadio")">Estádio</MudSelectItem>
+                <MudSelectItem Value="@("outro")">Outro</MudSelectItem>
             </MudSelect>
             <MudNumericField T="int" @bind-Value="_model.CapacidadeTotal" Label="Capacidade total" Min="1" Variant="Variant.Outlined" Class="mb-3" />
             <MudDatePicker @bind-Date="_data" Label="Data do evento" Variant="Variant.Outlined" Class="mb-3" Validation="@((DateTime? date) => ValidateDate(date))" />
@@ -40,12 +41,12 @@
 
     private MudForm? _form;
     private readonly EventoFormModel _model = new();
-    private DateTime? _data = DateTime.Today;
+    private DateTime? _data = DateTime.Today.AddDays(1);
     private bool _saving;
 
     protected override void OnInitialized()
     {
-        _data ??= DateTime.Today;
+        _data ??= DateTime.Today.AddDays(1);
     }
 
     private void Cancelar() => MudDialog.Cancel();
@@ -54,7 +55,7 @@
     {
         if (date is null)
             return "Informe a data do evento.";
-        if (date.Value.Date < DateTime.Today)
+        if (date.Value.Date <= DateTime.Today)
             return "A data do evento deve ser futura.";
         return null;
     }
