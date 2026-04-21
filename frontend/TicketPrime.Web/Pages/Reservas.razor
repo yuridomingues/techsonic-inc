@@ -1,0 +1,195 @@
+@page "/reservas"
+@attribute [Authorize]
+@using TicketPrime.Web.Components.Dialogs
+@inject IApiService Api
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>TicketPrime - Reservas</PageTitle>
+
+<section class="tp-page-shell">
+    <MudPaper Class="tp-hero" Elevation="0">
+        <div class="tp-kicker">Minha Conta</div>
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start" Class="mt-4" Breakpoint="Breakpoint.Sm">
+            <div>
+                <MudText Class="tp-hero-title">Acompanhe reservas, pagamentos e cancelamentos.</MudText>
+                <MudText Typo="Typo.body1" Class="tp-hero-copy mt-4">
+                    Tudo o que pertence ao usuário autenticado fica consolidado aqui, com atualização rápida e status legível por item.
+                </MudText>
+            </div>
+            <div class="tp-inline-actions">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="/">
+                    Ver eventos
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh" OnClick="CarregarAsync">
+                    Atualizar
+                </MudButton>
+            </div>
+        </MudStack>
+    </MudPaper>
+
+    @if (_loading)
+    {
+        <div class="tp-loading-grid">
+            @for (var index = 0; index < 3; index++)
+            {
+                <div class="tp-loading-card">
+                    <MudSkeleton Width="45%" Height="1rem" />
+                    <MudSkeleton Width="50%" Height="2rem" Class="mt-3" />
+                    <MudSkeleton Width="75%" Height="1rem" Class="mt-3" />
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="tp-summary-grid">
+            <div class="tp-summary-card">
+                <div class="tp-summary-label">Total</div>
+                <div class="tp-summary-value">@_reservas.Count</div>
+                <div class="tp-summary-note">Reservas vinculadas ao usuário autenticado.</div>
+            </div>
+            <div class="tp-summary-card">
+                <div class="tp-summary-label">Confirmadas</div>
+                <div class="tp-summary-value">@ReservasConfirmadas</div>
+                <div class="tp-summary-note">Itens com pagamento aprovado e status confirmado.</div>
+            </div>
+            <div class="tp-summary-card">
+                <div class="tp-summary-label">Pendentes</div>
+                <div class="tp-summary-value">@ReservasPendentes</div>
+                <div class="tp-summary-note">Reservas aguardando conclusão de pagamento.</div>
+            </div>
+            <div class="tp-summary-card">
+                <div class="tp-summary-label">Canceladas</div>
+                <div class="tp-summary-value">@ReservasCanceladas</div>
+                <div class="tp-summary-note">Itens encerrados por usuário ou fluxo administrativo.</div>
+            </div>
+        </div>
+    }
+
+    <MudPaper Class="pa-4 tp-panel" Elevation="0">
+        <MudTable Items="@_reservas" Hover="true" Breakpoint="Breakpoint.Sm" Dense="true" Loading="_loading" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh>Evento</MudTh>
+            <MudTh>Assentos</MudTh>
+            <MudTh>Cupom</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh Style="text-align:right">Valor final</MudTh>
+            <MudTh>Ações</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Evento">@context.EventoNome</MudTd>
+            <MudTd DataLabel="Assentos">@(string.IsNullOrWhiteSpace(context.AssentosResumo) ? "-" : context.AssentosResumo)</MudTd>
+            <MudTd DataLabel="Cupom">@(string.IsNullOrWhiteSpace(context.CupomUtilizado) ? "-" : context.CupomUtilizado)</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Variant="Variant.Filled" Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Valor final" Style="text-align:right">@context.ValorFinalPago.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))</MudTd>
+            <MudTd DataLabel="Ações">
+                <MudStack Row="true" Spacing="1" Wrap="Wrap.Wrap">
+                    @if (string.Equals(context.Status, "pendente", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <MudButton Variant="Variant.Text"
+                                   Color="Color.Primary"
+                                   OnClick="@(() => AbrirPagamentoAsync(context))">
+                            Pagar
+                        </MudButton>
+                    }
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Error"
+                               Disabled="@(context.Status == "cancelada")"
+                               OnClick="@(() => CancelarReservaAsync(context.Id, context.Status))">
+                        Cancelar
+                    </MudButton>
+                </MudStack>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudStack Class="tp-empty-state" Spacing="2">
+                <MudText>Nenhuma reserva encontrada para esta conta.</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick='() => Navigation.NavigateTo("/")'>Ver eventos</MudButton>
+            </MudStack>
+        </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+</section>
+
+@code {
+    private IReadOnlyList<ReservaDto> _reservas = [];
+    private bool _loading = true;
+
+    private int ReservasConfirmadas => _reservas.Count(reserva => string.Equals(reserva.Status, "confirmada", StringComparison.OrdinalIgnoreCase));
+    private int ReservasPendentes => _reservas.Count(reserva => string.Equals(reserva.Status, "pendente", StringComparison.OrdinalIgnoreCase));
+    private int ReservasCanceladas => _reservas.Count(reserva => string.Equals(reserva.Status, "cancelada", StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _loading = true;
+        try
+        {
+            _reservas = await Api.GetReservasAsync();
+        }
+        catch (HttpRequestException)
+        {
+            Snackbar.Add("Não foi possível carregar as reservas da conta.", Severity.Error);
+            _reservas = [];
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Ocorreu um erro ao atualizar suas reservas.", Severity.Error);
+            _reservas = [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task CancelarReservaAsync(int reservaId, string status)
+    {
+        if (status == "cancelada")
+            return;
+
+        var result = await Api.CancelReservaAsync(reservaId);
+        if (result.Success)
+        {
+            Snackbar.Add("Reserva cancelada com sucesso.", Severity.Success);
+            await CarregarAsync();
+        }
+        else
+        {
+            Snackbar.Add(result.ErrorMessage ?? "Não foi possível cancelar a reserva.", Severity.Error);
+        }
+    }
+
+    private async Task AbrirPagamentoAsync(ReservaDto reserva)
+    {
+        var parameters = new DialogParameters
+        {
+            [nameof(PagamentoReservaDialog.Reserva)] = reserva,
+        };
+        var options = new DialogOptions { BackdropClick = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<PagamentoReservaDialog>(null, parameters, options);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+            await CarregarAsync();
+    }
+
+    private static Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "confirmada" => Color.Success,
+            "pendente" => Color.Warning,
+            "cancelada" => Color.Error,
+            "estornada" => Color.Info,
+            _ => Color.Default,
+        };
+    }
+}

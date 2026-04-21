@@ -3,6 +3,12 @@ CREATE TABLE Usuarios(
     Nome VARCHAR(100) NOT NULL,
     Email VARCHAR(150) NOT NULL,
     SenhaHash VARCHAR(255) NOT NULL DEFAULT '',
+    EmailVerificado BIT NOT NULL DEFAULT 0,
+    EmailVerificadoEm DATETIME NULL,
+    CodigoVerificacaoHash VARCHAR(64) NULL,
+    CodigoVerificacaoExpiraEm DATETIME NULL,
+    TentativasCodigoEmail INT NOT NULL DEFAULT 0,
+    UltimoEnvioCodigoEm DATETIME NULL,
     DataCriacao DATETIME NOT NULL DEFAULT GETDATE(),
     IsAdmin BIT NOT NULL DEFAULT 0
 );
@@ -119,8 +125,8 @@ CREATE INDEX IX_FilaEvento_UsuarioCpf ON FilaEvento(UsuarioCpf);
 CREATE INDEX IX_FilaEvento_Status ON FilaEvento(Status);
 
 -- Insert default admin user (password: "admin123" hashed with BCrypt)
-INSERT INTO Usuarios (Cpf, Nome, Email, SenhaHash, IsAdmin) VALUES
-('00000000000', 'Administrador', 'admin@ticketprime.com', '$2a$11$K7Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y5Q5Z5Y', 1);
+INSERT INTO Usuarios (Cpf, Nome, Email, SenhaHash, EmailVerificado, EmailVerificadoEm, IsAdmin) VALUES
+('00000000000', 'Administrador', 'admin@ticketprime.com', '$2a$11$VsP1Gl7H66fBSngtBZoYTeM6j2e05rwDo7d35OfXaDHf2INtgcGv6', 1, GETUTCDATE(), 1);
 
 -- Insert sample event
 INSERT INTO Eventos (Nome, CapacidadeTotal, DataEvento, PrecoPadrao, LocalNome, LocalCidade, TipoEvento) VALUES

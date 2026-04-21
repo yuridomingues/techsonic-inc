@@ -52,7 +52,7 @@ public class SeatHub : Hub
         await base.OnConnectedAsync();
     }
 
-    public override async Task OnDisconnectedAsync(Exception exception)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // Release any locks held by this connection
         await base.OnDisconnectedAsync(exception);

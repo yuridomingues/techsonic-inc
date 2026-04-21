@@ -1,0 +1,80 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start TicketPrime SQL",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"bin/start-local-sql.ps1"
+			],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Stop TicketPrime SQL",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"bin/stop-local-sql.ps1"
+			],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Start TicketPrime App",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"src/techsonic-inc.csproj",
+				"--no-build",
+				"--urls",
+				"http://localhost:5000"
+			],
+			"isBackground": true,
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Stop TicketPrime App",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"$connections = @(Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue); if ($connections.Count -gt 0) { $connections | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Write-Host 'TicketPrime app stopped on port 5000.' } else { Write-Host 'No process listening on port 5000.' }"
+			],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Run TicketPrime Preview",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"Start TicketPrime SQL",
+				"Start TicketPrime App"
+			],
+			"problemMatcher": []
+		}
+	]
+}

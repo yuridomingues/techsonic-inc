@@ -3,6 +3,7 @@
 @using TicketPrime.Web.Components.Dialogs
 @inject IApiService Api
 @inject IDialogService DialogService
+@inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
 <PageTitle>TicketPrime - Eventos</PageTitle>
@@ -12,9 +13,29 @@
         <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Eventos</MudText>
         <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Acompanhe os eventos disponíveis e os detalhes de cada um.</MudText>
     </div>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="tp-action" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNovoAsync">
-        Novo evento
-    </MudButton>
+    <div class="tp-inline-actions">
+        @if (_isAdmin)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="tp-action" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirNovoAsync">
+                Novo evento
+            </MudButton>
+        }
+        else if (_isAuthenticated)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="tp-action" Href="/reservas">
+                Minhas reservas
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="tp-action" Href="/login">
+                Entrar
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="/usuarios">
+                Criar conta
+            </MudButton>
+        }
+    </div>
 </MudStack>
 
 <MudPaper Class="pa-2 pa-sm-4 tp-surface" Elevation="1">
@@ -26,7 +47,10 @@
             <MudTh>Data</MudTh>
             <MudTh Style="text-align:right">Preço</MudTh>
             <MudTh>Status</MudTh>
-            <MudTh>Ações</MudTh>
+            @if (_isAdmin || _isAuthenticated)
+            {
+                <MudTh>Ações</MudTh>
+            }
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Nome">@context.Nome</MudTd>
@@ -36,24 +60,51 @@
             <MudTd DataLabel="Status">
                 <MudChip T="string" Variant="Variant.Filled" Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
             </MudTd>
-            <MudTd DataLabel="Ações">
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => EditarEvento(context.Id))" Class="mr-2" />
-                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error" OnClick="@(() => CancelarEventoAsync(context.Id))" Disabled="@(context.Status == "cancelado")" />
-            </MudTd>
+            @if (_isAdmin)
+            {
+                <MudTd DataLabel="Ações">
+                    <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error" OnClick="@(() => CancelarEventoAsync(context.Id))" Disabled="@(context.Status == "cancelado")" />
+                </MudTd>
+            }
+            else if (_isAuthenticated)
+            {
+                <MudTd DataLabel="Ações">
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Primary"
+                               Disabled="@(context.Status != "ativo")"
+                               OnClick="@(() => AbrirReservaAsync(context))">
+                        Reservar
+                    </MudButton>
+                </MudTd>
+            }
         </RowTemplate>
         <NoRecordsContent>
-            <MudText Class="pa-4">Nenhum evento encontrado.</MudText>
+            <MudStack Class="tp-empty-state" Spacing="2">
+                <MudText>Nenhum evento encontrado no momento.</MudText>
+                @if (_isAdmin)
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="AbrirNovoAsync">Criar primeiro evento</MudButton>
+                }
+            </MudStack>
         </NoRecordsContent>
     </MudTable>
     </div>
 </MudPaper>
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+
     private IReadOnlyList<TicketPrime.Web.Models.EventoDto> _eventos = [];
     private bool _loading = true;
+    private bool _isAuthenticated;
+    private bool _isAdmin;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateTask;
+        _isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+        _isAdmin = authState.User.IsInRole("Admin");
         await CarregarAsync();
     }
 
@@ -66,7 +117,7 @@
         }
         catch (HttpRequestException)
         {
-            // Evita expor erro técnico de rede para o usuário final.
+            Snackbar.Add("Não foi possível atualizar a lista de eventos agora.", Severity.Warning);
             _eventos = [];
         }
         catch (Exception)
@@ -89,6 +140,19 @@
             await CarregarAsync();
     }
 
+    private async Task AbrirReservaAsync(EventoDto evento)
+    {
+        var parameters = new DialogParameters
+        {
+            [nameof(ReservaDialog.Evento)] = evento,
+        };
+        var options = new DialogOptions { BackdropClick = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ReservaDialog>(null, parameters, options);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+            Navigation.NavigateTo("/reservas");
+    }
+
     private Color GetStatusColor(string status)
     {
         return status switch
@@ -98,11 +162,6 @@
             "encerrado" => Color.Warning,
             _ => Color.Default
         };
-    }
-
-    private void EditarEvento(int id)
-    {
-        Snackbar.Add($"Edição do evento {id} ainda não implementada.", Severity.Warning);
     }
 
     private async Task CancelarEventoAsync(int id)

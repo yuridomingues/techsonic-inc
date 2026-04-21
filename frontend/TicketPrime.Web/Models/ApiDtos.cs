@@ -14,9 +14,17 @@ public record CupomDto(string Codigo, decimal PorcentagemDesconto, decimal Valor
 
 public record UsuarioDto(string Cpf, string Nome, string Email);
 public record UsuarioCreateDto(string Cpf, string Nome, string Email, string Senha);
+public record UsuarioCadastroResponse(string Cpf, string Nome, string Email, bool EmailVerificado, DateTime CodigoExpiraEm, bool CodigoEnviado, string MetodoEntrega, string MensagemEntrega);
+public record UsuarioEmailVerificationRequest(string Cpf, string Codigo);
+public record UsuarioEmailVerificationResponse(bool Success, string Message);
+public record UsuarioCodigoReenvioRequest(string Cpf);
+public record ApiOperationResponse(bool Success, string Message);
+public record ApiDataResponse<T>(bool Success, string Message, T? Data);
+public record EmailVerificationDeliveryResponse(bool Success, string Message, bool CodigoEnviado, DateTime CodigoExpiraEm, string MetodoEntrega, string MensagemEntrega);
 
 public record LoginRequest(string Cpf, string Senha);
-public record LoginResponse(string Token, string Cpf, string Nome, string Email, DateTime ExpiresAt);
+public record LoginResponse(string Token, string Cpf, string Nome, string Email, bool IsAdmin, DateTime ExpiresAt);
+public record LoginAttemptResponse(bool Success, string Message, LoginResponse? Session);
 
 public record AssentoDto(int Id, int EventoId, string Fila, string Numero, string Tipo, decimal PrecoAdicional, string Status, DateTime? LockedUntil, string? LockedByCpf);
 public record AssentoLockRequest(int SeatId, int EventoId);
@@ -26,8 +34,8 @@ public record FilaRequest(int EventoId);
 public record FilaResponse(int EventoId, string UsuarioCpf, int Posicao, string Status, DateTime DataEntrada, int? TempoEstimado);
 public record FilaDto(int Id, int EventoId, string UsuarioCpf, int Posicao, string Status, DateTime DataEntrada, int? TempoEstimado);
 
-public record ReservaDto(int Id, string UsuarioCpf, int EventoId, string EventoNome, string? CupomUtilizado, decimal ValorFinalPago, string Status);
-public record ReservaCreateDto(string UsuarioCpf, int EventoId, string? CupomUtilizado);
+public record ReservaDto(int Id, string UsuarioCpf, int EventoId, string EventoNome, string? CupomUtilizado, decimal ValorFinalPago, string Status, string? AssentosResumo);
+public record ReservaCreateDto(string UsuarioCpf, int EventoId, string? CupomUtilizado, IReadOnlyList<int>? AssentoIds);
 
 public record PagamentoDto(int Id, int ReservaId, string Metodo, decimal ValorTotal, string Status, string? TransacaoId, int? Parcelas, DateTime? DataPagamento, DateTime DataAtualizacao);
 public record PagamentoCreateDto(string Metodo, int? Parcelas);
