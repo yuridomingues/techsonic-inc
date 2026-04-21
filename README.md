@@ -75,7 +75,7 @@ dotnet restore frontend/TicketPrime.Web/TicketPrime.Web.csproj
 dotnet run --project src/techsonic-inc.csproj
 ```
 
-Observação: no Windows, a connection string do projeto usa `127.0.0.1` em vez de `localhost` para evitar que o cliente SQL tente resolver uma instância local diferente da exposta pelo container Docker.
+Observação: no Windows, a connection string do projeto deve usar `Server=127.0.0.1,1433` em vez de `localhost` ou `127.0.0.1` sem porta, para forçar a conexão TCP com o SQL Server exposto pelo container Docker e evitar a resolução de instância local via Named Pipes.
 
 ### Validação de e-mail no ambiente local
 - Se `Email:Smtp:Host` estiver configurado em `src/appsettings.json`, o sistema envia o código de validação usando SMTP.
