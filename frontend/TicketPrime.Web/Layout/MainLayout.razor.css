@@ -32,10 +32,6 @@
     box-shadow: 0 10px 24px rgba(8, 145, 178, 0.18);
 }
 
-.tp-appbar-kicker {
-    color: var(--mud-palette-text-secondary);
-}
-
 .tp-appbar-actions {
     display: flex;
     align-items: center;
@@ -50,7 +46,6 @@
 }
 
 @media (max-width: 959.98px) {
-    .tp-appbar-kicker,
     .tp-appbar-user,
     .tp-appbar-secondary-action {
         display: none !important;
