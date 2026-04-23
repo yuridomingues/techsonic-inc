@@ -477,23 +477,23 @@ app.MapPost("/api/eventos", async (EventoCreateDto evento, HttpContext httpConte
         return Results.Unauthorized();
 
     if (!ValidacoesEntrada.NomeObrigatorio(evento.Nome))
-        return Results.Ok(new ApiDataResponse<EventoDto>(false, "Nome do evento é obrigatório.", null));
+        return Results.BadRequest(new ApiDataResponse<EventoDto>(false, "Nome do evento é obrigatório.", null));
 
     if (!ValidacoesEntrada.DataEventoFutura(evento.DataEvento))
-        return Results.Ok(new ApiDataResponse<EventoDto>(false, "A data do evento deve ser futura.", null));
+        return Results.BadRequest(new ApiDataResponse<EventoDto>(false, "A data do evento deve ser futura.", null));
 
     if (!ValidacoesEntrada.CapacidadePositiva(evento.CapacidadeTotal))
-        return Results.Ok(new ApiDataResponse<EventoDto>(false, "A capacidade total deve ser positiva.", null));
+        return Results.BadRequest(new ApiDataResponse<EventoDto>(false, "A capacidade total deve ser positiva.", null));
 
     if (!ValidacoesEntrada.PrecoPositivo(evento.PrecoPadrao))
-        return Results.Ok(new ApiDataResponse<EventoDto>(false, "O preço padrão deve ser maior que zero.", null));
+        return Results.BadRequest(new ApiDataResponse<EventoDto>(false, "O preço padrão deve ser maior que zero.", null));
 
     if (!ValidacoesEntrada.TipoEventoValido(evento.TipoEvento))
-        return Results.Ok(new ApiDataResponse<EventoDto>(false, "Tipo de evento inválido.", null));
+        return Results.BadRequest(new ApiDataResponse<EventoDto>(false, "Tipo de evento inválido.", null));
 
     var taxaFixa = evento.TaxaFixa ?? 5.00m;
     if (!ValidacoesEntrada.PrecoNaoNegativo(taxaFixa))
-        return Results.Ok(new ApiDataResponse<EventoDto>(false, "A taxa fixa não pode ser negativa.", null));
+        return Results.BadRequest(new ApiDataResponse<EventoDto>(false, "A taxa fixa não pode ser negativa.", null));
 
     try
     {
@@ -531,7 +531,7 @@ app.MapPost("/api/eventos", async (EventoCreateDto evento, HttpContext httpConte
         var id = await connection.ExecuteScalarAsync<int>(sql, parametros);
         var criado = new EventoDto(id, evento.Nome.Trim(), evento.CapacidadeTotal, evento.DataEvento, evento.PrecoPadrao, tipoEvento, evento.Descricao, evento.LocalNome, evento.LocalCidade, evento.BannerUrl, evento.GaleriaTexto, taxaFixa, status);
 
-        return Results.Ok(new ApiDataResponse<EventoDto>(true, "Evento cadastrado com sucesso.", criado));
+        return Results.Created($"/api/eventos/{id}", new ApiDataResponse<EventoDto>(true, "Evento cadastrado com sucesso.", criado));
     }
     catch (SqlException)
     {
@@ -792,13 +792,13 @@ app.MapPost("/api/cupons", async (CupomCreateDto cupom, HttpContext httpContext)
         return Results.Unauthorized();
 
     if (!ValidacoesEntrada.NomeObrigatorio(cupom.Codigo))
-        return Results.Ok(new ApiOperationResponse(false, "Código do cupom é obrigatório."));
+        return Results.BadRequest(new ApiOperationResponse(false, "Código do cupom é obrigatório."));
 
     if (!ValidacoesEntrada.PercentualValido(cupom.PorcentagemDesconto))
-        return Results.Ok(new ApiOperationResponse(false, "A porcentagem de desconto deve estar entre 0 e 100."));
+        return Results.BadRequest(new ApiOperationResponse(false, "A porcentagem de desconto deve estar entre 0 e 100."));
 
     if (!ValidacoesEntrada.PrecoNaoNegativo(cupom.ValorMinimoRegra))
-        return Results.Ok(new ApiOperationResponse(false, "O valor mínimo não pode ser negativo."));
+        return Results.BadRequest(new ApiOperationResponse(false, "O valor mínimo não pode ser negativo."));
 
     try
     {
@@ -815,11 +815,11 @@ app.MapPost("/api/cupons", async (CupomCreateDto cupom, HttpContext httpContext)
         };
         
         await connection.ExecuteAsync(sql, payload);
-        return Results.Ok(new ApiOperationResponse(true, "Cupom cadastrado com sucesso."));
+        return Results.Created($"/api/cupons/{payload.Codigo}", new ApiOperationResponse(true, "Cupom cadastrado com sucesso."));
     }
     catch (SqlException ex) when (ex.Number is 2601 or 2627)
     {
-        return Results.Ok(new ApiOperationResponse(false, "Já existe um cupom com este código."));
+        return Results.BadRequest(new ApiOperationResponse(false, "Já existe um cupom com este código."));
     }
     catch (SqlException)
     {
@@ -902,21 +902,21 @@ app.MapPost("/api/usuarios", async (UsuarioCreateDto usuario, IEmailVerification
     var cpfLimpo = NormalizarCpf(usuario.Cpf);
     var erroCpf = ValidacoesEntrada.ObterErroCpf(cpfLimpo);
     if (erroCpf is not null)
-        return Results.Ok(new ApiDataResponse<UsuarioCadastroResponse>(false, $"Erro: {erroCpf}", null));
+        return Results.BadRequest(new ApiDataResponse<UsuarioCadastroResponse>(false, $"Erro: {erroCpf}", null));
 
     var nomeNormalizado = NormalizarNome(usuario.Nome);
     var erroNome = ValidacoesEntrada.ObterErroNomeCompleto(nomeNormalizado);
     if (erroNome is not null)
-        return Results.Ok(new ApiDataResponse<UsuarioCadastroResponse>(false, $"Erro: {erroNome}", null));
+        return Results.BadRequest(new ApiDataResponse<UsuarioCadastroResponse>(false, $"Erro: {erroNome}", null));
 
     var emailNormalizado = NormalizarEmail(usuario.Email);
     var erroEmail = ValidacoesEntrada.ObterErroEmail(emailNormalizado);
     if (erroEmail is not null)
-        return Results.Ok(new ApiDataResponse<UsuarioCadastroResponse>(false, $"Erro: {erroEmail}", null));
+        return Results.BadRequest(new ApiDataResponse<UsuarioCadastroResponse>(false, $"Erro: {erroEmail}", null));
 
     var errosSenha = ValidacoesEntrada.ListarErrosSenha(usuario.Senha);
     if (errosSenha.Count > 0)
-        return Results.Ok(new ApiDataResponse<UsuarioCadastroResponse>(false, $"Erro: {string.Join(' ', errosSenha)}", null));
+        return Results.BadRequest(new ApiDataResponse<UsuarioCadastroResponse>(false, $"Erro: {string.Join(' ', errosSenha)}", null));
 
     var codigoVerificacao = GerarCodigoVerificacao();
     var codigoVerificacaoHash = HashCodigoVerificacao(codigoVerificacao);
@@ -930,14 +930,14 @@ app.MapPost("/api/usuarios", async (UsuarioCreateDto usuario, IEmailVerification
 
         if (cpfExiste > 0)
         {
-            return Results.Ok(new ApiDataResponse<UsuarioCadastroResponse>(false, "Erro: Este CPF já está cadastrado.", null));
+            return Results.BadRequest(new ApiDataResponse<UsuarioCadastroResponse>(false, "Erro: Este CPF já está cadastrado.", null));
         }
 
         var emailExiste = await connection.ExecuteScalarAsync<int>(
             "SELECT COUNT(1) FROM Usuarios WHERE LOWER(Email) = @Email",
             new { Email = emailNormalizado });
         if (emailExiste > 0)
-            return Results.Ok(new ApiDataResponse<UsuarioCadastroResponse>(false, "Erro: Este e-mail já está cadastrado.", null));
+            return Results.BadRequest(new ApiDataResponse<UsuarioCadastroResponse>(false, "Erro: Este e-mail já está cadastrado.", null));
 
         var senhaHash = BCrypt.Net.BCrypt.HashPassword(usuario.Senha);
         var insertSql = @"INSERT INTO Usuarios (
@@ -984,7 +984,7 @@ app.MapPost("/api/usuarios", async (UsuarioCreateDto usuario, IEmailVerification
             envioCodigo.DeliveryMode,
             envioCodigo.UserMessage);
 
-        return Results.Ok(new ApiDataResponse<UsuarioCadastroResponse>(true, "Conta criada com sucesso.", resposta));
+        return Results.Created($"/api/usuarios/{cpfLimpo}", new ApiDataResponse<UsuarioCadastroResponse>(true, "Conta criada com sucesso.", resposta));
     }
     catch (SqlException)
     {

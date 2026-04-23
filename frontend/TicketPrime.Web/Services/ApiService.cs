@@ -203,6 +203,13 @@ public sealed class ApiService(HttpClient http) : IApiService
 
     private static async Task<ApiResult<T>> MapDataEnvelopeAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
     {
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var errPayload = await response.Content.ReadFromJsonAsync<ApiDataResponse<T>>(JsonOptions, cancellationToken);
+            if (errPayload is not null && !string.IsNullOrWhiteSpace(errPayload.Message))
+                return ApiResult<T>.Fail(errPayload.Message);
+        }
+
         if (response.IsSuccessStatusCode)
         {
             var payload = await response.Content.ReadFromJsonAsync<ApiDataResponse<T>>(JsonOptions, cancellationToken);
@@ -219,6 +226,13 @@ public sealed class ApiService(HttpClient http) : IApiService
 
     private static async Task<ApiResult> MapOperationEnvelopeAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var errPayload = await response.Content.ReadFromJsonAsync<ApiOperationResponse>(JsonOptions, cancellationToken);
+            if (errPayload is not null && !string.IsNullOrWhiteSpace(errPayload.Message))
+                return ApiResult.Fail(errPayload.Message);
+        }
+
         if (response.IsSuccessStatusCode)
         {
             var payload = await response.Content.ReadFromJsonAsync<ApiOperationResponse>(JsonOptions, cancellationToken);

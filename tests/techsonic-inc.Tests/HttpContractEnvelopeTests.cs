@@ -28,7 +28,7 @@ public sealed class HttpContractEnvelopeTests(TicketPrimeApiFactory factory) : I
     }
 
     [SkippableFact]
-    public async Task CadastroDuplicado_DeveRetornar200ComEnvelopeDeFalha()
+    public async Task CadastroDuplicado_DeveRetornar400ComEnvelopeDeFalha()
     {
         factory.EnsureDatabaseAvailable();
         using var client = factory.CreateClient();
@@ -45,14 +45,14 @@ public sealed class HttpContractEnvelopeTests(TicketPrimeApiFactory factory) : I
         });
         var payload = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.NotNull(payload);
         Assert.False(payload!.Success);
         Assert.Equal("Erro: Este CPF já está cadastrado.", payload.Message);
     }
 
     [SkippableFact]
-    public async Task EventoInvalido_DeveRetornar200ComEnvelopeDeFalha()
+    public async Task EventoInvalido_DeveRetornar400ComEnvelopeDeFalha()
     {
         factory.EnsureDatabaseAvailable();
         using var client = factory.CreateClient();
@@ -76,7 +76,7 @@ public sealed class HttpContractEnvelopeTests(TicketPrimeApiFactory factory) : I
         });
         var payload = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.NotNull(payload);
         Assert.False(payload!.Success);
         Assert.Equal("Nome do evento é obrigatório.", payload.Message);
