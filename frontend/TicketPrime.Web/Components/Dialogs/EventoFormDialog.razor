@@ -26,7 +26,7 @@
             <MudTextField @bind-Value="_model.BannerUrl" Label="URL do banner (imagem)" Variant="Variant.Outlined" Class="mb-3" />
             <MudTextField @bind-Value="_model.GaleriaTexto" Label="Galeria (texto)" Lines="2" Variant="Variant.Outlined" Class="mb-3" />
             <MudNumericField T="decimal?" @bind-Value="_model.TaxaFixa" Label="Taxa fixa (R$)" Format="N2" Culture="@System.Globalization.CultureInfo.GetCultureInfo("pt-BR")" Variant="Variant.Outlined" Class="mb-3" />
-            <MudCheckBox T="bool" @bind-Checked="_model.GerarSetoresAutomaticos" Label="Gerar setores automaticamente (A, B, C)" Class="mb-3" />
+            <MudCheckBox T="bool" @bind-Checked="_model.GerarSetoresAutomaticos" Label="Gerar setores e assentos padrão (Premium, Vip, Regular)" Class="mb-3" />
         </MudForm>
     </DialogContent>
     <DialogActions>

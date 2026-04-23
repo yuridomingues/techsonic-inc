@@ -11,13 +11,13 @@
 |Julia Scarpi|06006846|
 |Leonardo Otoline|06010109|
 
-## 🎯 Funcionalidades Implementadas (Dashboard Admin)
+## 🎯 Funcionalidades Implementadas (além do núcleo AV1 em `docs/requisitos.md`)
 
-- **Admin Dashboard**: Página `/admin` com métricas em tempo real (ingressos vendidos, receita total, eventos ativos, total de usuários).
-- **Criação Completa de Eventos**: Formulário com todos os campos obrigatórios (nome, tipo, capacidade, data, preço, descrição, local, imagem) e validação frontend/backend.
-- **Geração Automática de Setores**: Ao criar um evento, opção de gerar setores A, B, C com variação de preço (+20% / -20%).
-- **Lista de Eventos com Ações**: Tabela exibindo eventos cadastrados, status (ativo, cancelado, encerrado) e botões para editar/cancelar.
-- **Cancelamento de Eventos (Admin)**: Endpoint que atualiza status do evento, cancela reservas associadas, reembolsa pagamentos e gera cupons de 10% de desconto.
+- **Admin Dashboard**: Página `/admin` com métricas consolidadas via API (ingressos vendidos, receita, eventos ativos, usuários); use **Atualizar** para recarregar os dados.
+- **Criação Completa de Eventos**: Formulário com campos principais (nome, tipo, capacidade, data, preço, descrição, local, URL de banner) e validação frontend/backend.
+- **Geração automática de setores e assentos**: Opção ao criar evento; o backend cria setores padrão **Premium / Vip / Regular** (preços derivados do preço padrão do evento) e o mapa de assentos associado.
+- **Lista de Eventos com ações (admin)**: Tabela com status (ativo, cancelado, encerrado); admin pode **cancelar** evento na lista e **criar** novo pelo botão **Novo evento** (não há edição inline de evento na tabela).
+- **Cancelamento de Eventos (Admin)**: Atualiza o evento, cancela reservas vinculadas, marca pagamentos **aprovados** como **estornado** no banco e gera cupom de 10% por reserva afetada *(fluxo em dados; não integra gateway de cartão)*.
 - **Validação Robusta**: Regras de negócio (capacidade > 0, preço > 0, data futura) aplicadas tanto no frontend (MudBlazor) quanto no backend (`ValidacoesEntrada`).
 - **Upload de Imagem (Placeholder)**: Campo para URL de banner; preparado para integração com `MudFileUpload`.
 - **Animações e UX Aprimorada**:
