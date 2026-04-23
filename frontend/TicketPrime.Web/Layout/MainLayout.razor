@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @implements IDisposable
 @using TicketPrime.Web.Theme
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IBrowserViewportService BrowserViewportService
 @inject NavigationManager Navigation
 
@@ -12,19 +13,46 @@
             <MudText Typo="Typo.subtitle1" Class="ml-1 ml-sm-2 tp-brand-title" Style="font-weight: 600; letter-spacing: -0.02em;">TicketPrime</MudText>
         </div>
         <MudSpacer />
-        <MudText Typo="Typo.caption" Class="mr-2 tp-appbar-kicker">Central de gestão</MudText>
+        <AuthorizeView>
+            <Authorized Context="auth">
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                    @if (auth.User.IsInRole("Admin"))
+                    {
+                        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="mr-1">Admin</MudChip>
+                    }
+                    <MudText Typo="Typo.caption" Class="mr-1">@auth.User.Identity?.Name</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="LogoutAsync">Sair</MudButton>
+                </MudStack>
+            </Authorized>
+            <NotAuthorized>
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/usuarios">Criar conta</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="/login">Entrar</MudButton>
+                </MudStack>
+            </NotAuthorized>
+        </AuthorizeView>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen" Elevation="0" ClipMode="DrawerClipMode.Always" Breakpoint="Breakpoint.Md" Variant="@DrawerVariant.Responsive" Class="tp-drawer">
         <MudNavMenu Class="tp-nav-menu">
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Event">Eventos</MudNavLink>
-            <MudNavLink Href="/cupons" Icon="@Icons.Material.Filled.LocalOffer">Cupons</MudNavLink>
+            <AuthorizeView>
+                <Authorized>
+                    <MudNavLink Href="/reservas" Icon="@Icons.Material.Filled.ConfirmationNumber">Reservas</MudNavLink>
+                </Authorized>
+            </AuthorizeView>
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <MudNavLink Href="/admin" Icon="@Icons.Material.Filled.Dashboard">Admin</MudNavLink>
+                    <MudNavLink Href="/cupons" Icon="@Icons.Material.Filled.LocalOffer">Cupons</MudNavLink>
+                </Authorized>
+            </AuthorizeView>
             <MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.PersonAdd">Usuários</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
     <MudMainContent Class="tp-main">
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="tp-page-container py-4 py-sm-6 px-3 px-sm-6">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="tp-page-container py-4 py-sm-6 px-3 px-sm-6 page-fade-in">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -64,6 +92,15 @@
     }
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private async Task LogoutAsync()
+    {
+        if (AuthenticationStateProvider is not AppAuthenticationStateProvider authProvider)
+            return;
+
+        await authProvider.SignOutAsync();
+        Navigation.NavigateTo("/login");
+    }
 
     public void Dispose()
     {

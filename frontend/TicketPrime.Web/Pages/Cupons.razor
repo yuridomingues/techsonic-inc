@@ -1,4 +1,5 @@
 @page "/cupons"
+@attribute [Authorize(Roles = "Admin")]
 @inject IApiService Api
 @inject ISnackbar Snackbar
 

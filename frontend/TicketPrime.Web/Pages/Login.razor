@@ -1,0 +1,147 @@
+@page "/login"
+@using Microsoft.AspNetCore.Components.Web
+@using MudBlazor
+@inject IApiService Api
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>TicketPrime - Entrar</PageTitle>
+
+<MudGrid Spacing="3" Class="tp-auth-layout">
+    <MudItem xs="12" md="5" Class="tp-auth-info-column">
+        <div class="tp-feature-card">
+            <div class="tp-kicker">Acesso Seguro</div>
+            <MudText Typo="Typo.h3" Class="mt-4">Entre para operar reservas, catálogo e painéis protegidos.</MudText>
+            <MudText Typo="Typo.body1" Class="mt-4" Style="color: #cbd5e1;">
+                O login libera histórico de reservas para clientes e áreas operacionais para contas administrativas.
+            </MudText>
+
+            <div class="tp-feature-list">
+                <div class="tp-feature-item">
+                    <span class="tp-feature-dot"></span>
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Sessão persistente</MudText>
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Seu token é reaproveitado no navegador para manter o fluxo contínuo.</MudText>
+                    </div>
+                </div>
+                <div class="tp-feature-item">
+                    <span class="tp-feature-dot"></span>
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Reservas centralizadas</MudText>
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Acompanhe pagamentos, cancelamentos e cupons em um só lugar.</MudText>
+                    </div>
+                </div>
+                <div class="tp-feature-item">
+                    <span class="tp-feature-dot"></span>
+                    <div>
+                        <MudText Typo="Typo.subtitle2">Operação administrativa</MudText>
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Contas admin ganham acesso a métricas, cupons e gestão da agenda.</MudText>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </MudItem>
+    <MudItem xs="12" md="7" Class="tp-auth-form-column">
+        <MudPaper Class="pa-6 tp-form" Elevation="0" Style="width: 100%;">
+            <div class="tp-kicker">Entrar</div>
+            <MudText Typo="Typo.h4" GutterBottom="true" Class="mt-4 tp-page-title">Acesse sua conta TicketPrime</MudText>
+            <MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+                Use seu CPF e senha para acessar as áreas protegidas do TicketPrime.
+            </MudText>
+
+            <MudForm @ref="_form" Model="_model">
+                <MudTextField @bind-Value="_model.Cpf"
+                              Label="CPF"
+                              Mask="@(new PatternMask("000.000.000-00"))"
+                              Variant="Variant.Outlined"
+                              Required="true"
+                              Class="mb-4" />
+
+                <MudTextField @bind-Value="_model.Senha"
+                              Label="Senha"
+                              Variant="Variant.Outlined"
+                              InputType="InputType.Password"
+                              Required="true"
+                              Class="mb-6" />
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           Class="tp-action"
+                           Disabled="_submitting"
+                           OnClick="EntrarAsync">
+                    Entrar
+                </MudButton>
+
+                @if (_submitting)
+                {
+                    <MudProgressLinear Class="mt-4" Indeterminate="true" Color="Color.Primary" />
+                }
+            </MudForm>
+
+            <MudDivider Class="my-5" />
+            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                Ainda não tem conta?
+                <MudLink Href="/usuarios">Cadastre-se para começar.</MudLink>
+            </MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private MudForm? _form;
+    private readonly LoginFormModel _model = new();
+    private bool _submitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo(authState.User.IsInRole("Admin") ? "/admin" : "/reservas");
+        }
+    }
+
+    private async Task EntrarAsync()
+    {
+        await (_form?.ValidateAsync() ?? Task.CompletedTask);
+        if (_form is not null && !_form.IsValid)
+            return;
+
+        _submitting = true;
+        try
+        {
+            var cpf = new string(_model.Cpf.Where(char.IsDigit).ToArray());
+            var result = await Api.LoginAsync(new LoginRequest(cpf, _model.Senha));
+            if (!result.Success || result.Data is null)
+            {
+                Snackbar.Add(result.ErrorMessage ?? "CPF ou senha invalidos.", Severity.Error);
+                return;
+            }
+
+            var response = result.Data;
+
+            if (AuthenticationStateProvider is not AppAuthenticationStateProvider authProvider)
+            {
+                Snackbar.Add("Não foi possível iniciar a sessão agora.", Severity.Error);
+                return;
+            }
+
+            await authProvider.SignInAsync(response);
+            Snackbar.Add("Sessão iniciada com sucesso.", Severity.Success);
+            Navigation.NavigateTo(response.IsAdmin ? "/admin" : "/reservas");
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private sealed class LoginFormModel
+    {
+        public string Cpf { get; set; } = string.Empty;
+        public string Senha { get; set; } = string.Empty;
+    }
+}

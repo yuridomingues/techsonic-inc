@@ -1,0 +1,481 @@
+@using System.Globalization
+@using TicketPrime.Web.Models
+@using TicketPrime.Web.Services
+@inject IApiService Api
+@inject ISnackbar Snackbar
+@implements IAsyncDisposable
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Reservar ingresso</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudPaper Class="pa-4 tp-surface" Elevation="0">
+                <MudText Typo="Typo.subtitle2">@Evento.Nome</MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                    @Evento.DataEvento.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                    @if (!string.IsNullOrWhiteSpace(Evento.LocalNome) || !string.IsNullOrWhiteSpace(Evento.LocalCidade))
+                    {
+                        <span> • @LocalEvento</span>
+                    }
+                </MudText>
+                <MudText Typo="Typo.body1" Class="mt-3">
+                    Valor base: @Evento.PrecoPadrao.ToString("C", CultureInfo.GetCultureInfo("pt-BR"))
+                </MudText>
+            </MudPaper>
+
+            @if (_loadingAssentos)
+            {
+                <MudPaper Class="pa-4 tp-surface" Elevation="0">
+                    <MudSkeleton Width="45%" Height="1rem" />
+                    <MudSkeleton Width="100%" Height="6rem" Class="mt-3" />
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Class="pa-4 tp-surface" Elevation="0">
+                    <MudStack Spacing="2">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Breakpoint="Breakpoint.Sm">
+                            <div>
+                                <MudText Typo="Typo.subtitle2">Escolha seu assento</MudText>
+                                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                                    @AssentosDisponiveis disponibilidade(s) agora neste evento.
+                                </MudText>
+                            </div>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="RecarregarDisponibilidadeAsync">
+                                Atualizar mapa
+                            </MudButton>
+                        </MudStack>
+
+                        @if (_assentos.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Elevation="0">
+                                Não foi possível carregar assentos deste evento agora.
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <div class="tp-seat-legend">
+                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success">Disponível</MudChip>
+                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">Selecionado</MudChip>
+                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Warning">Reservado</MudChip>
+                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Error">Ocupado</MudChip>
+                            </div>
+
+                            @foreach (var grupo in AssentosPorFila)
+                            {
+                                <div class="tp-seat-row">
+                                    <div class="tp-seat-row-label">Fila @grupo.Key</div>
+                                    <div class="tp-seat-grid">
+                                        @foreach (var assento in grupo)
+                                        {
+                                            <MudButton Variant="@(AssentoSelecionado(assento) ? Variant.Filled : Variant.Outlined)"
+                                                       Color="@ObterCorAssento(assento)"
+                                                       Disabled="@(_alterandoAssento || (!AssentoSelecionado(assento) && !AssentoDisponivelParaSelecao(assento)))"
+                                                       Class="tp-seat-button"
+                                                       OnClick="@(() => AlternarAssentoAsync(assento))">
+                                                @assento.Numero
+                                            </MudButton>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        @if (_assentoSelecionado is not null)
+                        {
+                            <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Dense="true" Elevation="0">
+                                Assento @_assentoSelecionado.Fila@_assentoSelecionado.Numero selecionado.
+                                @if (_lockedUntil is not null)
+                                {
+                                    <span> Bloqueado até @_lockedUntil.Value.ToLocalTime().ToString("HH:mm").</span>
+                                }
+                            </MudAlert>
+                        }
+                    </MudStack>
+                </MudPaper>
+            }
+
+            @if (MostrarFila)
+            {
+                <MudPaper Class="pa-4 tp-surface" Elevation="0">
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.subtitle2">Fila de espera</MudText>
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                            Não há assentos disponíveis agora. Você pode entrar na fila e acompanhar sua posição.
+                        </MudText>
+
+                        @if (_filaAtual is not null)
+                        {
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Elevation="0">
+                                Você está na posição @_filaAtual.Posicao da fila.
+                            </MudAlert>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="_alterandoFila" OnClick="SairDaFilaAsync">
+                                Sair da fila
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="tp-action" Disabled="_alterandoFila" OnClick="EntrarNaFilaAsync">
+                                Entrar na fila
+                            </MudButton>
+                        }
+                    </MudStack>
+                </MudPaper>
+            }
+
+            <MudForm @ref="_form">
+                <MudTextField @bind-Value="_cupom"
+                              Label="Cupom opcional"
+                              Variant="Variant.Outlined"
+                              HelperText="Se houver cupom válido, o backend recalcula o valor final automaticamente."
+                              Class="mb-2" />
+
+                <MudCheckBox T="bool"
+                             @bind-Checked="_simularPagamentoAgora"
+                             Label="Simular pagamento agora"
+                             Class="mb-2" />
+
+                @if (_simularPagamentoAgora)
+                {
+                    <MudSelect T="string" @bind-Value="_metodoPagamento" Label="Método de pagamento" Variant="Variant.Outlined" Class="mb-3">
+                        <MudSelectItem Value="@("pix")">Pix</MudSelectItem>
+                        <MudSelectItem Value="@("cartao_credito")">Cartão de crédito</MudSelectItem>
+                        <MudSelectItem Value="@("cartao_debito")">Cartão de débito</MudSelectItem>
+                    </MudSelect>
+
+                    @if (_metodoPagamento == "cartao_credito")
+                    {
+                        <MudNumericField T="int?"
+                                         @bind-Value="_parcelas"
+                                         Label="Parcelas"
+                                         Variant="Variant.Outlined"
+                                         Min="1"
+                                         Max="12"
+                                         Validation="@((int? valor) => ValidarParcelas(valor))" />
+                    }
+                }
+            </MudForm>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CancelarAsync">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="tp-action" Disabled="_saving" OnClick="ConfirmarAsync">
+            Confirmar reserva
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public EventoDto Evento { get; set; } = default!;
+
+    private MudForm? _form;
+    private IReadOnlyList<AssentoDto> _assentos = [];
+    private string _cupom = string.Empty;
+    private bool _simularPagamentoAgora = true;
+    private string _metodoPagamento = "pix";
+    private int? _parcelas = 1;
+    private bool _saving;
+    private bool _loadingAssentos = true;
+    private bool _alterandoAssento;
+    private bool _alterandoFila;
+    private int? _assentoSelecionadoId;
+    private AssentoDto? _assentoSelecionado;
+    private DateTime? _lockedUntil;
+    private FilaStatus? _filaAtual;
+    private bool _reservaCriada;
+
+    private string LocalEvento => string.Join(", ", new[] { Evento.LocalNome, Evento.LocalCidade }.Where(valor => !string.IsNullOrWhiteSpace(valor)));
+
+    private IEnumerable<IGrouping<string, AssentoDto>> AssentosPorFila => _assentos.GroupBy(assento => assento.Fila).OrderBy(grupo => grupo.Key, StringComparer.OrdinalIgnoreCase);
+
+    private int AssentosDisponiveis => _assentos.Count(assento => string.Equals(assento.Status, "disponivel", StringComparison.OrdinalIgnoreCase));
+
+    private bool MostrarFila => _assentos.Count > 0 && AssentosDisponiveis == 0 && _assentoSelecionado is null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RecarregarDisponibilidadeAsync();
+        await CarregarFilaAsync();
+    }
+
+    private async Task CancelarAsync()
+    {
+        await LiberarAssentoSelecionadoAsync(false);
+        MudDialog.Cancel();
+    }
+
+    private IEnumerable<string> ValidarParcelas(int? valor)
+    {
+        if (!_simularPagamentoAgora || _metodoPagamento != "cartao_credito")
+            return Enumerable.Empty<string>();
+
+        if (valor is null || valor < 1 || valor > 12)
+            return ["Parcelamento deve ficar entre 1 e 12."];
+
+        return Enumerable.Empty<string>();
+    }
+
+    private async Task ConfirmarAsync()
+    {
+        await (_form?.ValidateAsync() ?? Task.CompletedTask);
+        if (_form is not null && !_form.IsValid)
+            return;
+
+        if (_assentos.Count > 0 && _assentoSelecionadoId is null)
+        {
+            Snackbar.Add("Selecione um assento antes de confirmar a reserva.", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            var reservaResult = await Api.CreateReservaAsync(new ReservaCreateDto(
+                string.Empty,
+                Evento.Id,
+                NormalizarCupom(_cupom),
+                _assentoSelecionadoId is null ? null : [_assentoSelecionadoId.Value]));
+            if (!reservaResult.Success || reservaResult.Data is null)
+            {
+                Snackbar.Add(reservaResult.ErrorMessage ?? "Não foi possível criar a reserva.", Severity.Error);
+                await RecarregarDisponibilidadeAsync();
+                return;
+            }
+
+            _reservaCriada = true;
+
+            if (_filaAtual is not null)
+            {
+                await Api.LeaveFilaAsync(Evento.Id);
+                _filaAtual = null;
+            }
+
+            if (!_simularPagamentoAgora)
+            {
+                Snackbar.Add("Reserva criada com sucesso. Finalize o pagamento em Minhas reservas quando quiser.", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+                return;
+            }
+
+            var pagamentoResult = await Api.SimulatePagamentoAsync(
+                reservaResult.Data.Id,
+                new PagamentoCreateDto(_metodoPagamento, _metodoPagamento == "cartao_credito" ? _parcelas : null));
+
+            if (!pagamentoResult.Success || pagamentoResult.Data is null)
+            {
+                Snackbar.Add(pagamentoResult.ErrorMessage ?? "Reserva criada, mas o pagamento não pôde ser processado agora.", Severity.Warning);
+                MudDialog.Close(DialogResult.Ok(true));
+                return;
+            }
+
+            var statusPagamento = pagamentoResult.Data.Status;
+            if (string.Equals(statusPagamento, "aprovado", StringComparison.OrdinalIgnoreCase))
+                Snackbar.Add("Reserva criada e pagamento aprovado.", Severity.Success);
+            else
+                Snackbar.Add($"Reserva criada, mas o pagamento retornou status {statusPagamento}.", Severity.Warning);
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task RecarregarDisponibilidadeAsync()
+    {
+        _loadingAssentos = true;
+        try
+        {
+            _assentos = await Api.GetAssentosAsync(Evento.Id);
+            if (_assentoSelecionadoId is not null)
+            {
+                _assentoSelecionado = _assentos.FirstOrDefault(assento => assento.Id == _assentoSelecionadoId);
+                if (_assentoSelecionado is null || !string.Equals(_assentoSelecionado.Status, "reservado", StringComparison.OrdinalIgnoreCase))
+                {
+                    _assentoSelecionadoId = null;
+                    _assentoSelecionado = null;
+                    _lockedUntil = null;
+                }
+            }
+        }
+        catch (HttpRequestException)
+        {
+            Snackbar.Add("Não foi possível carregar o mapa de assentos agora.", Severity.Error);
+            _assentos = [];
+        }
+        finally
+        {
+            _loadingAssentos = false;
+        }
+    }
+
+    private async Task CarregarFilaAsync()
+    {
+        try
+        {
+            var fila = await Api.GetFilaPositionAsync(Evento.Id);
+            _filaAtual = fila is null
+                ? null
+                : new FilaStatus(fila.Posicao, fila.Status, fila.DataEntrada, fila.TempoEstimado);
+        }
+        catch
+        {
+            _filaAtual = null;
+        }
+    }
+
+    private async Task AlternarAssentoAsync(AssentoDto assento)
+    {
+        if (_alterandoAssento)
+            return;
+
+        _alterandoAssento = true;
+        try
+        {
+            if (AssentoSelecionado(assento))
+            {
+                await LiberarAssentoSelecionadoAsync(true);
+                return;
+            }
+
+            if (!AssentoDisponivelParaSelecao(assento))
+            {
+                Snackbar.Add("Assento indisponível no momento.", Severity.Warning);
+                return;
+            }
+
+            await LiberarAssentoSelecionadoAsync(false);
+
+            var lockResult = await Api.LockAssentoAsync(new AssentoLockRequest(assento.Id, Evento.Id));
+            if (lockResult?.Success != true)
+            {
+                Snackbar.Add(lockResult?.Message ?? "Não foi possível bloquear o assento agora.", Severity.Error);
+                await RecarregarDisponibilidadeAsync();
+                return;
+            }
+
+            _assentoSelecionadoId = assento.Id;
+            _lockedUntil = lockResult.LockedUntil;
+            await RecarregarDisponibilidadeAsync();
+            _assentoSelecionado = _assentos.FirstOrDefault(item => item.Id == assento.Id) ?? assento;
+            Snackbar.Add(lockResult.Message ?? "Assento bloqueado com sucesso.", Severity.Success);
+        }
+        finally
+        {
+            _alterandoAssento = false;
+        }
+    }
+
+    private async Task LiberarAssentoSelecionadoAsync(bool mostrarMensagem)
+    {
+        if (_reservaCriada || _assentoSelecionadoId is null)
+            return;
+
+        var assentoId = _assentoSelecionadoId.Value;
+        var releaseResult = await Api.ReleaseAssentoAsync(assentoId);
+
+        _assentoSelecionadoId = null;
+        _assentoSelecionado = null;
+        _lockedUntil = null;
+
+        if (mostrarMensagem)
+        {
+            if (releaseResult.Success)
+                Snackbar.Add("Assento liberado.", Severity.Info);
+            else
+                Snackbar.Add(releaseResult.ErrorMessage ?? "Não foi possível liberar o assento agora.", Severity.Warning);
+        }
+
+        await RecarregarDisponibilidadeAsync();
+    }
+
+    private async Task EntrarNaFilaAsync()
+    {
+        if (_alterandoFila)
+            return;
+
+        _alterandoFila = true;
+        try
+        {
+            var joinResult = await Api.JoinFilaAsync(new FilaRequest(Evento.Id));
+            if (!joinResult.Success || joinResult.Data is null)
+            {
+                Snackbar.Add(joinResult.ErrorMessage ?? "Não foi possível entrar na fila agora.", Severity.Error);
+                await CarregarFilaAsync();
+                return;
+            }
+
+            _filaAtual = new FilaStatus(joinResult.Data.Posicao, joinResult.Data.Status, joinResult.Data.DataEntrada, joinResult.Data.TempoEstimado);
+            Snackbar.Add($"Você entrou na fila. Posição atual: {joinResult.Data.Posicao}.", Severity.Info);
+        }
+        finally
+        {
+            _alterandoFila = false;
+        }
+    }
+
+    private async Task SairDaFilaAsync()
+    {
+        if (_alterandoFila)
+            return;
+
+        _alterandoFila = true;
+        try
+        {
+            var result = await Api.LeaveFilaAsync(Evento.Id);
+            if (result.Success)
+            {
+                _filaAtual = null;
+                Snackbar.Add("Você saiu da fila de espera.", Severity.Info);
+            }
+            else
+            {
+                Snackbar.Add(result.ErrorMessage ?? "Não foi possível sair da fila agora.", Severity.Error);
+            }
+        }
+        finally
+        {
+            _alterandoFila = false;
+        }
+    }
+
+    private bool AssentoSelecionado(AssentoDto assento) => _assentoSelecionadoId == assento.Id;
+
+    private static bool AssentoDisponivelParaSelecao(AssentoDto assento)
+    {
+        return string.Equals(assento.Status, "disponivel", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static Color ObterCorAssento(AssentoDto assento)
+    {
+        return assento.Status switch
+        {
+            "disponivel" => Color.Success,
+            "reservado" => Color.Warning,
+            "ocupado" => Color.Error,
+            _ => Color.Default,
+        };
+    }
+
+    private static string? NormalizarCupom(string? cupom)
+    {
+        if (string.IsNullOrWhiteSpace(cupom))
+            return null;
+
+        return cupom.Trim().ToUpperInvariant();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await LiberarAssentoSelecionadoAsync(false);
+    }
+
+    private sealed record FilaStatus(int Posicao, string Status, DateTime DataEntrada, int? TempoEstimado);
+}
