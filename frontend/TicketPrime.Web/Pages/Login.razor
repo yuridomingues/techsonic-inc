@@ -1,0 +1,108 @@
+@page "/login"
+@using MudBlazor
+@inject IJSRuntime JS
+@* Icon="@Icons.Material.Filled.Email"  <- Caso queira os icons ao lado do email*@
+@* <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="mr-1" /> <- Caso queira os icons ao lado da senha*@
+
+<MudStack Spacing="1" Class="mb-4 tp-page-header">
+
+        <MudStack Spacing="1" Class="mb-4 tp-page-header">
+            <div>
+                <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Bem-vindo</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2 mb-sm-3" Style="color: var(--mud-palette-text-secondary);">
+                    Insira seus dados para logar.
+                </MudText>
+            </div>
+        </MudStack>
+
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4" Elevation="0" ContentAlignment="HorizontalAlignment.Start">
+           Insira seus dados para cadastro
+        </MudAlert>
+
+        <MudPaper Class="pa-3 pa-sm-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
+    <MudForm @ref="_form" Model="_model">
+        <MudTextField @bind-Value="_model.Email"
+                      Label="E-mail"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      InputType="InputType.Email"
+                      Class="mb-6" />
+
+        <MudTextField @bind-Value="_model.Senha"
+                      Label="Senha"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      InputType="@(mostrarSenha ? InputType.Text : InputType.Password)"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@(mostrarSenha ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                      OnAdornmentClick="() => mostrarSenha = !mostrarSenha"
+                      Class="mb-4" />
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   FullWidth="true"
+                   Style="border-radius: 12px; padding: 14px;"
+                   OnClick="Entrar"
+                   Disabled="@carregando">
+            @if (carregando)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Entrando...</span>
+            }
+            else
+            {
+                <span>Entrar</span>
+            }
+        </MudButton>
+    </MudForm>
+    </MudPaper>
+
+        @* Mensagem de erro *@
+        @if (!string.IsNullOrEmpty(erro))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">@erro</MudAlert>
+        }
+
+</MudStack>
+
+@code {
+    private MudForm _form = default!;
+    private bool mostrarSenha = false;
+    private bool carregando = false;
+    private string erro = string.Empty;
+
+    private LoginModel _model = new();
+
+    private class LoginModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Senha { get; set; } = string.Empty;
+    }
+
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private async Task Entrar()
+    {
+        erro = string.Empty;
+
+        await _form.Validate();
+
+        if (!_form.IsValid)
+            return;
+
+        carregando = true;
+
+        // substituir pela nossa lógica real
+        if (_model.Email == "teste@teste.com" && _model.Senha == "123456")
+        {
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            erro = "E-mail ou senha incorretos.";
+        }
+
+        carregando = false;
+    }
+}

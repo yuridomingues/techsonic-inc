@@ -1,0 +1,118 @@
+@page "/cadastro"
+@using MudBlazor
+
+    <MudStack Spacing="1" Class="mb-4 tp-page-header">
+
+        <MudStack Spacing="1" Class="mb-4 tp-page-header">
+            <div>
+            <MudText Typo="Typo.h4" GutterBottom="true" Class="tp-page-title">Cadastro</MudText>
+                <MudText Typo="Typo.body2" Class="mb-2 mb-sm-3" Style="color: var(--mud-palette-text-secondary);">
+                    Cadastre seu usuario para fazer compras de ingressos para eventos
+                </MudText>
+            </div>
+        </MudStack>
+
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4" Elevation="0" ContentAlignment="HorizontalAlignment.Start">
+           Cada CPF pode ser cadastrado apenas uma vez.
+        </MudAlert>
+
+        <MudPaper Class="pa-3 pa-sm-4 tp-form" Elevation="1" MaxWidth="MaxWidth.Medium">
+    <MudForm @ref="_form" Model="_model">
+        <MudTextField @bind-Value="_model.Nome"
+                      Label="Nome completo"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_model.Cpf"
+                      Label="CPF"
+                      Mask="@(new PatternMask("000.000.000-00"))"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_model.Email"
+                      Label="E-mail"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      InputType="InputType.Email"
+                      Class="mb-6" />
+
+        <MudTextField @bind-Value="_model.Senha"
+                      Label="Senha"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      InputType="@(mostrarSenha ? InputType.Text : InputType.Password)"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@(mostrarSenha ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                      OnAdornmentClick="() => mostrarSenha = !mostrarSenha"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_confirmarSenha"
+                      Label="Confirmar Senha"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      InputType="@(mostrarSenha ? InputType.Text : InputType.Password)"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@(mostrarSenha ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                      OnAdornmentClick="() => mostrarSenha = !mostrarSenha"
+                      Class="mb-4" />
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Class="tp-action"
+                   Size="Size.Large"
+                   FullWidth="true"
+                   Disabled="_saving"
+                   OnClick="SalvarAsync">
+            Cadastrar
+        </MudButton>
+
+        @if (!string.IsNullOrEmpty(erro)){
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">@erro</MudAlert>
+        }
+    </MudForm>
+</MudPaper>
+
+
+    </MudStack>
+
+@code {
+    private MudForm _form = default!;
+    private bool mostrarSenha = false;
+    private bool _saving = false;
+    private string _confirmarSenha = string.Empty;
+    private string erro = string.Empty;
+
+    private CadastroModel _model = new();
+
+    private class CadastroModel
+    {
+        public string Nome { get; set; } = string.Empty;
+        public string Cpf { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Senha { get; set; } = string.Empty;
+    }
+
+    private async Task SalvarAsync()
+    {
+        erro = string.Empty;
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+            return;
+
+        if (_model.Senha != _confirmarSenha)
+        {
+            erro = "As senhas não coincidem.";
+            return;
+        }
+
+        _saving = true;
+
+        // TODO: lógica de cadastro
+
+        _saving = false;
+    }
+}
