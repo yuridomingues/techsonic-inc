@@ -50,17 +50,17 @@ Tudo isso garantindo o controle eficiente de estoque e o cumprimento das regras 
 
 ### Preparar o banco SQL Server (Docker)
 1. Inicie o Docker Desktop e aguarde ficar em estado Running.
-2. Suba o SQL Server local, crie o banco `TicketPrime` e aplique o schema automaticamente:
+2. Suba o SQL Server local, crie o banco `TicketPrime` e aplique o schema automaticamente (PowerShell, na raiz do repositório):
 ```powershell
-.\bin\start-local-sql.ps1
+.\scripts\start-local-sql.ps1
 ```
 
-O script usa o [docker-compose.yml](docker-compose.yml), sobe o servico `sqlserver`, aguarda o login do `sa` responder em `127.0.0.1:1433`, cria o banco se necessario e aplica `db/schemaTicket.sql` apenas na primeira inicializacao.
+O script usa o [docker-compose.yml](docker-compose.yml), sobe o serviço `sqlserver`, aguarda o login do `sa` responder em `127.0.0.1:1433`, cria o banco se necessário e aplica `db/schemaTicket.sql`. Se o schema já tiver sido aplicado antes, o `sqlcmd` pode acusar objetos já existentes; nesse caso use `docker compose down -v` e rode o script de novo para um banco limpo.
 
 Para parar o banco local depois:
 
 ```powershell
-.\bin\stop-local-sql.ps1
+.\scripts\stop-local-sql.ps1
 ```
 
 ### Restaurar dependências
@@ -70,55 +70,35 @@ dotnet restore tests/techsonic-inc.Tests/techsonic-inc.Tests.csproj
 dotnet restore frontend/TicketPrime.Web/TicketPrime.Web.csproj
 ```
 
-### Executar a API (AV1)
+### Executar a API + interface (recomendado)
+O projeto **`src`** referencia o Blazor e **hospeda a Minimal API e o frontend no mesmo endereço** (mesma origem → `/api/*` e a SPA funcionam juntos).
+
 ```bash
 dotnet run --project src/techsonic-inc.csproj
 ```
+
+Abra no navegador a URL que o console mostrar. Com o perfil padrão do repositório, costuma ser **`https://localhost:7148`** (e **`http://localhost:5148`**). **Não use só** `dotnet run` no `frontend/TicketPrime.Web` para testar eventos/login: nesse modo o `HttpClient` chama o próprio host do dev server do WASM, **onde não existe** a API, e a lista de eventos falha com “Não foi possível carregar eventos”.
+
+### Executar só a API (sem abrir o Blazor pelo `src`)
+Se precisar subir apenas o host web da API (por exemplo para testar com Postman), ainda assim use o mesmo projeto `src` — é ele que contém `Program.cs` e as rotas `/api/...`.
 
 Observação: no Windows, a connection string do projeto deve usar `Server=127.0.0.1,1433` em vez de `localhost` ou `127.0.0.1` sem porta, para forçar a conexão TCP com o SQL Server exposto pelo container Docker e evitar a resolução de instância local via Named Pipes.
 
-### Validação de e-mail no ambiente local
-- Se `Email:Smtp:Host` estiver configurado em `src/appsettings.json`, o sistema envia o código de validação usando SMTP.
-- Sem SMTP configurado, o sistema grava o e-mail em `src/logs/emails`, o que permite testar o fluxo localmente sem depender de um provedor externo.
-
-### Usar Mailtrap Sandbox
-- O Mailtrap Sandbox e ideal para testar o fluxo de e-mail sem enviar mensagens para a caixa real do usuario final.
-- Importante: no Sandbox, o codigo de validacao aparece dentro da inbox do Mailtrap, nao no Gmail/Outlook real do usuario.
-- Crie uma conta gratis no Mailtrap e abra uma inbox de `Email Sandbox`.
-- Copie as credenciais SMTP da inbox: `host`, `port`, `username` e `password`.
-- Configure o projeto executando o script abaixo no PowerShell:
-
-```powershell
-.\bin\configure-mailtrap.ps1
-```
-
-- O script vai pedir:
-  - `From address`
-  - `SMTP host`
-  - `SMTP port`
-  - `SMTP user`
-  - `SMTP password`
-
-- Depois reinicie a API:
-
-```bash
-dotnet run --project src/techsonic-inc.csproj
-```
-
-- Faça um cadastro de teste e consulte o codigo dentro da inbox do Mailtrap.
-- Se voce quiser entrega real para o e-mail do usuario final, use um provedor de envio real em vez do Sandbox.
+**E-mail / SMTP (opcional, não faz parte da AV1 do `projeto.pdf`):** o enunciado da AV1 só exige API + banco + testes; não pede envio de e-mail. O código atual, porém, inclui fluxo de cadastro com **código de verificação**: se `Email:Smtp:Host` em `src/appsettings.json` estiver **vazio**, a API grava a mensagem em **`src/logs/emails`** (modo pickup) e o fluxo continua testável **sem** Mailtrap nem SMTP. Só configure SMTP se quiser receber o código num provedor real ou num sandbox (ex.: Mailtrap); nesse caso você pode editar o `appsettings.json` ou usar o script auxiliar `.\scripts\configure-mailtrap.ps1`.
 
 ### Executar os testes
 ```bash
 dotnet test tests/techsonic-inc.Tests/techsonic-inc.Tests.csproj
 ```
 
-Observacao: a suite inclui testes de integracao HTTP com banco SQL Server real temporario. Para executar esses testes de fato, prepare o banco local antes com `./bin/start-local-sql.ps1`. Se o SQL local em `127.0.0.1` nao estiver acessivel, os testes sao descobertos normalmente, mas aparecem como `skipped` em vez de falhar a suite inteira.
+Observação: a suite inclui testes de integração HTTP com banco SQL Server real temporário. Para executá-los de fato, deixe o SQL acessível em `127.0.0.1:1433` (por exemplo com `.\scripts\start-local-sql.ps1` antes do `dotnet test`). Se o SQL não estiver disponível, os testes de integração aparecem como `skipped` em vez de falhar a suite inteira.
 
-### Executar o frontend (opcional)
+### Executar só o projeto Blazor isolado (avançado / depuração)
 ```bash
 dotnet run --project frontend/TicketPrime.Web/TicketPrime.Web.csproj
 ```
+
+Nesse modo a API **não** roda no mesmo host; a tela de eventos **não** conseguirá carregar dados até você apontar o `HttpClient` para outra URL (não configurado por padrão). Para uso normal do grupo, prefira **`dotnet run --project src/techsonic-inc.csproj`** acima.
 
 ---
 

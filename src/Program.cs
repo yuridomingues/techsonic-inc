@@ -17,6 +17,8 @@ using TicketPrime.Server.Hubs;
 using TicketPrime.Server.Services;
 using Serilog;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Options;
 
 const string AdminCpfPadrao = "00000000000";
@@ -1798,6 +1800,21 @@ app.MapPost("/api/reservas/{reservaId}/cancelar", async (int reservaId, HttpCont
 
 app.MapHealthChecks("/health");
 app.MapFallbackToFile("index.html");
+
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    try
+    {
+        var server = app.Services.GetRequiredService<IServer>();
+        var addresses = server.Features.Get<IServerAddressesFeature>()?.Addresses;
+        if (addresses is not null && addresses.Count > 0)
+            Log.Information("TicketPrime API no ar. Abra no navegador ou use Invoke-RestMethod com: {Urls}", string.Join(" | ", addresses));
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "API iniciada, mas nao foi possivel listar as URLs de escuta.");
+    }
+});
 
 app.Run();
 
